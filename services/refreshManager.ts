@@ -1,19 +1,28 @@
 // services/refreshManager.ts
+type Subscriber = {
+  resolve: (token: string) => void;
+  reject: (err: unknown) => void;
+};
 
 let isRefreshing = false;
-let subscribers: ((token: string) => void)[] = [];
+let subscribers: Subscriber[] = [];
 
-export const subscribeTokenRefresh = (cb: (token: string) => void) => {
-  subscribers.push(cb);
+export const getRefreshing = () => isRefreshing;
+export const setRefreshing = (val: boolean) => { isRefreshing = val; };
+
+export const subscribeTokenRefresh = (
+  resolve: (token: string) => void,
+  reject: (err: unknown) => void
+) => {
+  subscribers.push({ resolve, reject });
 };
 
 export const notifySubscribers = (token: string) => {
-  subscribers.forEach((cb) => cb(token));
+  subscribers.forEach((s) => s.resolve(token));
   subscribers = [];
 };
 
-export const setRefreshing = (value: boolean) => {
-  isRefreshing = value;
+export const rejectSubscribers = (err: unknown) => {
+  subscribers.forEach((s) => s.reject(err));
+  subscribers = [];
 };
-
-export const getRefreshing = () => isRefreshing;

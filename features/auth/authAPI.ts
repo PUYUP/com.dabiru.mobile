@@ -1,4 +1,4 @@
-import api from "@/services/apiClientNew";
+import api from "@/services/apiClient";
 const BASE_URL = "https://qf-token-exchange.pointilis-noktah-teknologi.workers.dev";
 
 export const exchangeTokenAPI = async (payload: any) => {

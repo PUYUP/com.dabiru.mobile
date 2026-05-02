@@ -1,4 +1,4 @@
-import api from "@/services/apiClientNew";
+import api from "@/services/apiClient";
 import { UpdateConfigPayload } from "./configTyping";
 
 export const getConfigAPI = async () => {

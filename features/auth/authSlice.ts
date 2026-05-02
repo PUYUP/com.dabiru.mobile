@@ -17,6 +17,14 @@ const authSlice = createSlice({
     setLanguageSelected: (state, { payload }) => {
         state.selectedLanguage = payload;
     },
+    setTokens(state, { payload }) {
+      state.accessToken = payload.accessToken;
+      state.refreshToken = payload.refreshToken;
+    },
+    revokeTokens(state) {
+      state.accessToken = null;
+      state.refreshToken = null;
+    },
   },
   extraReducers: (builder) => {
         builder
@@ -57,5 +65,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { clearSession, setLanguageSelected } = authSlice.actions;
+export const { clearSession, setLanguageSelected, setTokens, revokeTokens } = authSlice.actions;
 export default authSlice.reducer;

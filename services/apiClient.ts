@@ -1,27 +1,34 @@
 // services/apiClient.ts
-import { refreshToken, revokeToken } from '@/features/auth/authThunks';
-import { store } from '@/store/store';
 import axios from 'axios';
 
+import { QF_CLIENT_ID } from '@/constants/oauth';
 import {
   getRefreshing,
   notifySubscribers,
+  rejectSubscribers,
   setRefreshing,
   subscribeTokenRefresh,
 } from './refreshManager';
+import {
+  getAccessToken,
+  getRefreshToken,
+  onTokenRefreshed,
+  onTokenRevoked,
+} from './tokenProvider';
 
 const USE_PRELIVE = true;
 const baseUrl = USE_PRELIVE
-  ? "https://apis-prelive.quran.foundation"
-  : "https://apis.quran.foundation";
+  ? 'https://apis-prelive.quran.foundation'
+  : 'https://apis.quran.foundation';
 
-const api = axios.create({
-  baseURL: baseUrl,
-});
+const api = axios.create({ baseURL: baseUrl });
 
+// ✅ Request interceptor — inject token
 api.interceptors.request.use((config) => {
-  const token = store.getState().auth.accessToken;
+  const token = getAccessToken();
 
+  config.headers['X-Client-Id'] = QF_CLIENT_ID;
+  
   if (token) {
     config.headers['X-Auth-Token'] = token;
   }
@@ -29,67 +36,68 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// ✅ Response interceptor — handle 401 + auto refresh
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const originalRequest = error.config;
-    const state = store.getState();
 
-    if (error.response?.status !== 401) {
-      return Promise.reject(error);
-    }
-
-    // kalau sudah pernah retry → stop
-    if (originalRequest._retry) {
+    if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(error);
     }
 
     originalRequest._retry = true;
 
-    // 🔥 kalau lagi refresh → masuk queue
+    // 🔥 Kalau sedang refresh → masuk queue, tunggu token baru
     if (getRefreshing()) {
-      return new Promise((resolve) => {
-        subscribeTokenRefresh((newToken) => {
-          originalRequest.headers['X-Auth-Token'] = newToken;
-          resolve(api(originalRequest));
-        });
+      return new Promise((resolve, reject) => {
+        subscribeTokenRefresh(
+          (newToken) => {
+            originalRequest.headers['X-Auth-Token'] = newToken;
+            resolve(api(originalRequest));
+          },
+          (err) => reject(err),
+        );
       });
     }
 
-    // 🔥 mulai refresh
-    setRefreshing(true);
+    const currentRefreshToken = getRefreshToken();
 
-    if (!state.auth.refreshToken) {
-      setRefreshing(false);
-      store.dispatch(revokeToken());
+    // Tidak ada refresh token → langsung revoke
+    if (!currentRefreshToken) {
+      onTokenRevoked?.();
       return Promise.reject(error);
     }
 
+    setRefreshing(true);
+
     try {
-      const result = await store.dispatch(
-        refreshToken(state.auth.refreshToken)
-      ).unwrap();
+      // 🔥 Hit endpoint refresh token
+      const { data } = await axios.post(
+        `${baseUrl}/auth/v1/token/refresh`,
+        { refresh_token: currentRefreshToken },
+      );
 
-      const newToken = result.access_token;
+      const newAccessToken: string = data.access_token;
+      const newRefreshToken: string = data.refresh_token;
 
-      // update semua request yang nunggu
-      notifySubscribers(newToken);
+      // Simpan token baru ke store / AsyncStorage via callback
+      onTokenRefreshed?.(newAccessToken, newRefreshToken);
 
-      setRefreshing(false);
+      // Beritahu semua request yang antri
+      notifySubscribers(newAccessToken);
 
-      // retry request awal
-      originalRequest.headers['X-Auth-Token'] = newToken;
+      // Retry request awal
+      originalRequest.headers['X-Auth-Token'] = newAccessToken;
       return api(originalRequest);
     } catch (err) {
-      setRefreshing(false);
-
-      // fail semua subscriber (optional: bisa reject semua)
-      notifySubscribers('');
-
-      store.dispatch(revokeToken());
+      rejectSubscribers(err);
+      onTokenRevoked?.();
       return Promise.reject(err);
+    } finally {
+      setRefreshing(false);
     }
-  }
+  },
 );
 
 export default api;
