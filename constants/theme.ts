@@ -51,3 +51,31 @@ export const Fonts = Platform.select({
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
+
+// RNUI
+import {
+  Colors as RNUI_Colors,
+  Typography,
+} from 'react-native-ui-lib';
+
+RNUI_Colors.loadColors({
+  pink: '#000',
+  gold: '#FFD700',
+  accentPrimary: '#E6F4F5',
+});
+
+RNUI_Colors.loadSchemes({
+  light: {
+    $backgroundPrimaryHeavy: '#258c91',
+    $textPrimary: '#258c91',
+  },
+  dark: {
+    $backgroundPrimaryHeavy: '#2ca4ab',
+    $textPrimary: '#2ca4ab',
+  }
+});
+
+Typography.loadTypographies({
+  h1: {fontSize: 58, fontWeight: '300', lineHeight: 80},
+  h2: {fontSize: 46, fontWeight: '300', lineHeight: 64},
+});

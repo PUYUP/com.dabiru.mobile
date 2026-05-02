@@ -1,0 +1,88 @@
+import { makeRedirectUri, useAuthRequest } from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
+import * as React from "react";
+
+import { QF_APP_ID, QF_CLIENT_ID, QF_USE_PRELIVE } from "@/constants/oauth";
+import { exchangeToken, getUserProfile, revokeToken } from "@/features/auth/authThunks";
+import { getConfig } from "@/features/config/configThunks";
+import { useAppDispatch } from '@/hooks/redux-hooks';
+
+WebBrowser.maybeCompleteAuthSession();
+
+const authBaseUrl = QF_USE_PRELIVE
+  ? "https://prelive-oauth2.quran.foundation"
+  : "https://oauth2.quran.foundation";
+
+const discovery = {
+  authorizationEndpoint: `${authBaseUrl}/oauth2/auth`,
+  tokenEndpoint: `${authBaseUrl}/oauth2/token`,
+  revocationEndpoint: `${authBaseUrl}/oauth2/revoke`,
+};
+
+export function useQFAuth() {
+  const dispatch = useAppDispatch();
+  const redirectURI = makeRedirectUri({ scheme: QF_APP_ID });
+
+  const [request, response, promptAsync] = useAuthRequest(
+    {
+      clientId: QF_CLIENT_ID,
+      scopes: [
+        "openid",
+        "offline_access",
+        "bookmark", 
+        "content", 
+        "goal", 
+        "reading_session", 
+        "streak", 
+        "user", 
+        "post", 
+        "comment",
+        "preference",
+        "user",
+      ],
+      redirectUri: redirectURI,
+      usePKCE: true,
+    },
+    discovery
+  );
+
+  React.useEffect(() => {
+    if (!response || response.type !== "success" || !request?.codeVerifier) {
+      return;
+    }
+
+    const run = async () => {
+      try {
+        const token = await (dispatch(
+          exchangeToken({
+            code: response.params.code,
+            codeVerifier: request.codeVerifier,
+            redirectUri: redirectURI,
+          }) as any
+        )).unwrap();
+
+        // call another thunk to fetch user profile after successful login
+        dispatch(getUserProfile(token.access_token) as any);
+        dispatch(getConfig() as any); // Fetch config after login
+      } catch (err) {
+        console.log("Login failed:", err);
+      }
+    };
+
+    run();
+  }, [response]);
+
+  const logout = async () => {
+    try {
+      dispatch(revokeToken() as any);
+    } catch (err) {
+      console.log("Logout error:", err);
+    }
+  };
+
+  return {
+    login: () => promptAsync(),
+    isReady: !!request,
+    logout,
+  };
+}
