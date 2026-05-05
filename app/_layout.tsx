@@ -1,17 +1,21 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { getUnixTime } from 'date-fns';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { Provider, useSelector } from 'react-redux';
 
-import { useAppSelector } from '@/hooks/redux-hooks';
+import { theme } from '@/constants/theme';
+import { createGoal } from '@/features/user/userThunks';
+import { useAppDispatch, useAppSelector } from '@/hooks/redux-hooks';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useQFAutoRefreshToken } from '@/hooks/use-qf-auto-refresh-token';
 import { persistor, store } from '@/store/store';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React, { useEffect } from 'react';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { PaperProvider } from 'react-native-paper';
 import { PersistGate } from 'redux-persist/lib/integration/react';
-
-import '../constants/theme';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -69,15 +73,48 @@ function RootNav() {
 
   }, [isAuthenticated, selectedLanguage, isRehydrated, segments]);
 
+  // Listen supabase signup
+  const dispatch = useAppDispatch();
+  const supabaseUser = useAppSelector((state: any) => state.auth.supabase.user);
+
+  useEffect(() => {
+    if (supabaseUser) {
+      const lastSignIn = getUnixTime(new Date(supabaseUser.last_sign_in_at));
+      const createdAt = getUnixTime(new Date(supabaseUser.created_at));
+      const isNew = lastSignIn == createdAt;
+
+      if (isNew) {
+        console.log("New user detected...");
+
+        // create default goal
+        dispatch(createGoal({ 
+            type: 'QURAN_TIME',
+            amount: 900, // in seconds
+            duration: 1,
+            category: 'QURAN'
+        }) as any);
+      }
+    }
+  }, [supabaseUser]);
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
+      <PaperProvider 
+        theme={theme} 
+        settings={{
+          icon: (props) => <MaterialIcons {...props} />,
+        }}>
+        <KeyboardProvider>
+          <Stack>
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+            <Stack.Screen name="adjust-goal" options={{ headerShown: true, headerBackButtonDisplayMode: 'minimal', title: 'Adjust Goal' }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          </Stack>
+          <StatusBar style="auto" />
+        </KeyboardProvider>
+      </PaperProvider>
     </ThemeProvider>
   );
 }

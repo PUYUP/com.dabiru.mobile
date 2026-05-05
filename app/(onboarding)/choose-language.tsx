@@ -4,8 +4,8 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import CountryFlag from "react-native-country-flag";
+import { Button, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button, Colors } from "react-native-ui-lib";
 
 const LANGUAGES = [
     { code: 'gb', lang: 'en', name: 'English' },
@@ -25,10 +25,10 @@ const LanguageItem = ({
     isSelected: boolean;
     onPress: () => void;
 }) => {
-    // Read RNUI colors at render time, not at module load time
-    const accent = Colors.$textPrimary;
-    const accentBorder = Colors.$backgroundPrimaryHeavy;
-    const accentLight = Colors.accentPrimary;
+    const theme = useTheme();
+    const accent = theme.colors.primary;
+    const accentBorder = theme.colors.surfaceVariant;
+    const accentLight = theme.colors.primaryContainer;
 
     return (
         <TouchableOpacity
@@ -84,11 +84,13 @@ export default function ChooseLanguageScreen() {
                 />
 
                 <Button
-                    label="Continue"
+                    mode="contained"
                     disabled={!selectedLang}
                     onPress={() => { chooseHandler(selectedLang!); }}
                     style={styles.continueButton}
-                />
+                >
+                    <Text>Continue</Text>
+                </Button>
             </View>
         </SafeAreaView>
     );

@@ -3,9 +3,10 @@ import * as WebBrowser from "expo-web-browser";
 import * as React from "react";
 
 import { QF_APP_ID, QF_CLIENT_ID, QF_USE_PRELIVE } from "@/constants/oauth";
-import { exchangeToken, getUserProfile, revokeToken } from "@/features/auth/authThunks";
+import { exchangeToken, getUserProfile, revokeToken, supabaseSignOut, supabaseSignUpWithEmail } from "@/features/auth/authThunks";
 import { getConfig } from "@/features/config/configThunks";
 import { useAppDispatch } from '@/hooks/redux-hooks';
+import { jwtDecode } from "jwt-decode";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -39,6 +40,7 @@ export function useQFAuth() {
         "comment",
         "preference",
         "user",
+        "activity_day",
       ],
       redirectUri: redirectURI,
       usePKCE: true,
@@ -64,6 +66,17 @@ export function useQFAuth() {
         // call another thunk to fetch user profile after successful login
         dispatch(getUserProfile(token.access_token) as any);
         dispatch(getConfig() as any); // Fetch config after login
+
+        const idToken = token.id_token;
+        if (idToken) {
+          const profile = jwtDecode(idToken) as any;
+          const email = profile.email;
+          const sub = profile.sub; // equal to profile id
+          
+          // signup to supabase
+          await dispatch(supabaseSignUpWithEmail({ email, password: sub }) as any);
+        }
+
       } catch (err) {
         console.log("Login failed:", err);
       }
@@ -75,6 +88,7 @@ export function useQFAuth() {
   const logout = async () => {
     try {
       dispatch(revokeToken() as any);
+      dispatch(supabaseSignOut() as any);
     } catch (err) {
       console.log("Logout error:", err);
     }

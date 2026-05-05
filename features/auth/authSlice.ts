@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { exchangeToken, getUserProfile, refreshToken, revokeToken } from './authThunks';
+import { Session, User } from '@supabase/supabase-js';
+import { exchangeToken, getUserProfile, refreshToken, revokeToken, supabaseSignInWithEmail, supabaseSignUpWithEmail } from './authThunks';
 
 const initialState = {
   user: null,
@@ -7,6 +8,10 @@ const initialState = {
   refreshToken: null,
   isAuthenticated: false,
   selectedLanguage: null,
+  supabase: {
+    user: null as User | null,
+    session: null as Session | null,
+  }
 };
 
 const authSlice = createSlice({
@@ -62,6 +67,29 @@ const authSlice = createSlice({
             })
             .addCase(getUserProfile.rejected, () => initialState)
             
+            // supabase sign-up with email
+            .addCase(supabaseSignUpWithEmail.pending, () => {
+                console.log("Signing up with email...");
+            })
+            .addCase(supabaseSignUpWithEmail.fulfilled, (state, action) => {
+                state.supabase.user = action.payload.user;
+                state.supabase.session = action.payload.session;
+            })
+            .addCase(supabaseSignUpWithEmail.rejected, (state, action) => {
+                console.log("Supabase sign-up failed:", action.payload);
+            })
+
+            // supabase sign-in with email
+            .addCase(supabaseSignInWithEmail.pending, () => {
+                console.log("Signing in with email...");
+            })
+            .addCase(supabaseSignInWithEmail.fulfilled, (state, action) => {
+                state.supabase.user = action.payload.user;
+                state.supabase.session = action.payload.session;
+            })
+            .addCase(supabaseSignInWithEmail.rejected, (state, action) => {
+                console.log("Supabase sign-in failed:", action.payload);
+            });
     },
 });
 

@@ -3,8 +3,8 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import CountryFlag from "react-native-country-flag";
+import { Button } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button } from "react-native-ui-lib";
 
 const Index = () => {
     const router = useRouter();
@@ -173,9 +173,10 @@ const Index = () => {
             {isReady && (
                 <View style={{ marginTop: 'auto', paddingBottom: insets.bottom + 16, paddingHorizontal: 40 }}>
                     <Button 
-                        label="Continue with Quran.Foundation" 
                         onPress={() => continueHandler()}
-                    />
+                        mode="contained">
+                        <Text>Continue with Quran.Foundation</Text>
+                    </Button>
                 </View>
             )}
         </SafeAreaView>

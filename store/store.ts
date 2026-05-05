@@ -1,5 +1,7 @@
 import { setTokens } from '@/features/auth/authSlice';
 import { revokeToken } from '@/features/auth/authThunks';
+import tafsirsReducer from '@/features/tafsirs/tafsirsSlice';
+import userReducer from '@/features/user/userSlice';
 import { setOnTokenRefreshed, setOnTokenRevoked, setRefreshTokenGetter, setTokenGetter } from '@/services/tokenProvider';
 import { configureStore } from '@reduxjs/toolkit';
 import { persistStore } from 'redux-persist';
@@ -9,7 +11,9 @@ import { configPersistedReducer } from './configStorage';
 export const store = configureStore({
   reducer: {
     auth: authPersistedReducer,
+    user: userReducer,
     config: configPersistedReducer,
+    tafsirs: tafsirsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

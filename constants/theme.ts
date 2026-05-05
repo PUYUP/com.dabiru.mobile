@@ -4,6 +4,7 @@
  */
 
 import { Platform } from 'react-native';
+import { MD3LightTheme } from 'react-native-paper';
 
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
@@ -52,30 +53,16 @@ export const Fonts = Platform.select({
   },
 });
 
-// RNUI
-import {
-  Colors as RNUI_Colors,
-  Typography,
-} from 'react-native-ui-lib';
-
-RNUI_Colors.loadColors({
-  pink: '#000',
-  gold: '#FFD700',
-  accentPrimary: '#E6F4F5',
-});
-
-RNUI_Colors.loadSchemes({
-  light: {
-    $backgroundPrimaryHeavy: '#258c91',
-    $textPrimary: '#258c91',
+export const theme = {
+  ...MD3LightTheme,
+  roundness: 16,
+  colors: {
+    ...MD3LightTheme.colors,
+    primary: '#258c91',
+    secondary: '#242424',
+    elevation: {
+      ...MD3LightTheme.colors.elevation,
+      level2: '#f5f5f5', // Set the desired default menu background color
+    },
   },
-  dark: {
-    $backgroundPrimaryHeavy: '#2ca4ab',
-    $textPrimary: '#2ca4ab',
-  }
-});
-
-Typography.loadTypographies({
-  h1: {fontSize: 58, fontWeight: '300', lineHeight: 80},
-  h2: {fontSize: 46, fontWeight: '300', lineHeight: 64},
-});
+};

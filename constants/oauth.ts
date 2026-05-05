@@ -11,3 +11,5 @@ export const QF_DISCOVERY = {
   tokenEndpoint: `${QF_AUTH_BASE_URL}/oauth2/token`,
   revocationEndpoint: `${QF_AUTH_BASE_URL}/oauth2/revoke`,
 };
+
+export const MUSHAF_ID = 7; // Indopak16Lines

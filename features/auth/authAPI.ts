@@ -1,4 +1,5 @@
 import api from "@/services/apiClient";
+import { supabase } from "@/services/supabase";
 const BASE_URL = "https://qf-token-exchange.pointilis-noktah-teknologi.workers.dev";
 
 export const exchangeTokenAPI = async (payload: any) => {
@@ -45,4 +46,41 @@ export const revokeTokenAPI = async (refreshToken: string) => {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error);
   return data;
+};
+
+export const supabaseSignUpWithEmailAPI = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+
+  if (error) {
+    console.log("Supabase sign-up error:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const supabaseSignInWithEmailAPI = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    console.log("Supabase sign-in error:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const supabaseSignOutAPI = async () => {
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    console.log("Supabase sign-out error:", error);
+    throw error;
+  }
 };
