@@ -1,4 +1,5 @@
 import { MUSHAF_ID } from '@/constants/oauth';
+import VerseForRead from '@/features/tafsirs/components/verse-for-read';
 import StreakCard from '@/features/user/components/streak-card';
 import { addActivity } from '@/features/user/userThunks';
 import { useAppDispatch } from '@/hooks/redux-hooks';
@@ -29,6 +30,7 @@ export default function HomeScreen() {
       mushafId: MUSHAF_ID,
       ranges: ["1:2-1:3"],
       type: 'QURAN',
+      date: '2026-05-04',
     }) as any);
   }
   
@@ -37,8 +39,14 @@ export default function HomeScreen() {
       <ScrollView nestedScrollEnabled={true}>
         <View style={styles.scrollContent}>
           <View style={{ marginBottom: 16, paddingHorizontal: 16 }}>
+            <VerseForRead verseKey='2:40' />
+          </View>
+
+          <View style={{ marginBottom: 16, paddingHorizontal: 16 }}>
             <StreakCard />
           </View>
+
+          
 
           <View>
             <Button mode="contained" onPress={logout}>

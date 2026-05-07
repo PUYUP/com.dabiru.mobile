@@ -1,19 +1,30 @@
-import { updateConfig } from "@/features/config/configThunks";
-import { useAppDispatch } from "@/hooks/redux-hooks";
+import { bulkUpdateConfig, getLanguages, getTranslations } from "@/features/config/configThunks";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import CountryFlag from "react-native-country-flag";
 import { Button, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+// currently only language have ibnu kathir tafsirs
 const LANGUAGES = [
-    { code: 'gb', lang: 'en', name: 'English' },
-    { code: 'id', lang: 'id', name: 'Indonesian' },
-    { code: 'ru', lang: 'ru', name: 'русский' },
-    { code: 'sa', lang: 'ar', name: 'العربية' },
-    { code: 'pk', lang: 'ur', name: 'اردو' },
-    { code: 'bd', lang: 'bn', name: 'বাংলা' },
+    { 
+        flag: 'gb', 
+        iso_code: 'en', 
+        name: 'English', 
+        language_id: 84,
+        language_name: 'english',
+        tafsir_slug: 'en-tafisr-ibn-kathir',
+    },
+    { 
+        flag: 'id', 
+        iso_code: 'id', 
+        name: 'Bahasa Indonesia', 
+        language_id: 33,
+        language_name: 'indonesian',
+        tafsir_slug: 'id-tafsir-ibn-kathir' 
+    },
 ];
 
 const LanguageItem = ({
@@ -21,7 +32,7 @@ const LanguageItem = ({
     isSelected,
     onPress,
 }: {
-    language: typeof LANGUAGES[0];
+    language: any;
     isSelected: boolean;
     onPress: () => void;
 }) => {
@@ -39,9 +50,9 @@ const LanguageItem = ({
             onPress={onPress}
             activeOpacity={0.7}
         >
-            <CountryFlag isoCode={language.code} size={22} />
+            <CountryFlag isoCode={language.flag} size={22} />
             <Text style={[styles.languageName, isSelected && { color: accent, fontWeight: '500' }]}>
-                {language.name}
+                {language.native_name}
             </Text>
             <View style={[styles.radio, isSelected && { borderColor: accent }]}>
                 {isSelected && <View style={[styles.radioDot, { backgroundColor: accent }]} />}
@@ -54,12 +65,47 @@ export default function ChooseLanguageScreen() {
     const dispatch = useAppDispatch();
     const router = useRouter();
     const [selectedLang, setSelectedLang] = useState<string | null>(null);
+    const [selectedTafsir, setSelectedTafsir] = useState<string | null>(null);
+    const [selectedTranslation, setSelectedTranslation] = useState<string | null>(null);
+    const [languagesList, setLanguagesList] = useState<any[]>([]);
+
+    const languages = useAppSelector((state: any) => state.config.languages.data);
+    const translations = useAppSelector((state: any) => state.config.translations.data);
+
+    useEffect(() => {
+        if (languages) {
+            const used = languages
+                .filter((l: any) => 
+                    LANGUAGES.some((item: any) => item.iso_code === l.iso_code)
+                )
+                .map((l: any) => {
+                    const found = LANGUAGES.find((obj: any) => obj.iso_code == l.iso_code);
+                    return {
+                        ...l,
+                        flag: found?.flag,
+                        tafsir_slug: found?.tafsir_slug,
+                        language_id: found?.language_id,
+                    }
+                });
+
+            setLanguagesList(used);
+        }
+    }, [languages]);
 
     const chooseHandler = (lang: string) => {
-        dispatch({ type: 'auth/setLanguageSelected', payload: lang });
-        dispatch(updateConfig({ group: 'language', key: 'language', value: lang }) as any);
+        dispatch(bulkUpdateConfig({
+            language: { language: selectedLang },
+            tafsirs: { selectedTafsirs: [selectedTafsir] },
+            translations: { selectedTranslations: [selectedTranslation] },
+        }) as any);
+        
         router.navigate('/(tabs)');
     };
+
+    useEffect(() => {
+        dispatch(getLanguages() as any);
+        dispatch(getTranslations() as any);
+    }, []);
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -70,15 +116,19 @@ export default function ChooseLanguageScreen() {
                 </View>
 
                 <FlatList
-                    data={LANGUAGES}
+                    data={languagesList}
                     renderItem={({ item }) => (
                         <LanguageItem
                             language={item}
-                            isSelected={selectedLang === item.lang}
-                            onPress={() => setSelectedLang(item.lang)}
+                            isSelected={selectedLang === item.iso_code}
+                            onPress={() => {
+                                setSelectedLang(item.iso_code);
+                                setSelectedTafsir(item.tafsir_slug);
+                                setSelectedTranslation(item.language_id);
+                            }}
                         />
                     )}
-                    keyExtractor={(item) => item.lang}
+                    keyExtractor={(item) => item.iso_code}
                     contentContainerStyle={styles.list}
                     showsVerticalScrollIndicator={false}
                 />

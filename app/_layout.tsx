@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 import { Provider, useSelector } from 'react-redux';
 
 import { theme } from '@/constants/theme';
+import { getConfig } from '@/features/config/configThunks';
 import { createGoal } from '@/features/user/userThunks';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux-hooks';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -28,16 +29,11 @@ function RootNav() {
 
   useQFAutoRefreshToken();
 
+  // state selector
   const auth = useAppSelector((state: any) => state.auth);
-
+  const selectedLanguage = useAppSelector((state: any) => state.config.preferences.language.language);
+  const isRehydrated = useSelector((state: any) => state.auth?._persist?.rehydrated);
   const isAuthenticated = !!auth.isAuthenticated;
-  const selectedLanguage = useAppSelector(
-    (state: any) => state.config.language.language
-  );
-
-  const isRehydrated = useSelector(
-    (state: any) => state.auth?._persist?.rehydrated
-  );
 
   if (!isRehydrated) {
     return null; // atau splash screen
@@ -68,6 +64,10 @@ function RootNav() {
 
     // 3. Sudah lengkap → paksa ke tabs
     if (inAuthGroup || inOnboarding) {
+      // refresh config
+      dispatch(getConfig() as any);
+
+      // redirecting...
       router.replace('/(tabs)');
     }
 
@@ -108,7 +108,8 @@ function RootNav() {
           <Stack>
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-            <Stack.Screen name="adjust-goal" options={{ headerShown: true, headerBackButtonDisplayMode: 'minimal', title: 'Adjust Goal' }} />
+            <Stack.Screen name="adjust-goal-modal" options={{ headerShown: false, presentation: 'modal', title: 'Adjust Goal' }} />
+            <Stack.Screen name="tafsir-reader" options={{ headerShown: true, headerBackButtonDisplayMode: 'minimal', title: 'Read Tafsir' }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>

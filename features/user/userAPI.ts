@@ -1,6 +1,6 @@
 import { MUSHAF_ID } from "@/constants/oauth";
 import api from "@/services/apiClient";
-import { ActivityPayload, GoalInfo, GoalPayload } from "./userTyping";
+import { ActivityDaysQuery, ActivityPayload, GoalInfo, GoalPayload } from "./userTyping";
 
 // create goal
 export const createGoalAPI = async (payload: GoalPayload): Promise<GoalPayload> => {
@@ -77,3 +77,29 @@ export const addActivityAPI = async (payload: ActivityPayload): Promise<any> => 
         throw error;
     }
 };
+
+// get activity days
+export const getActivityDaysAPI = async (query: ActivityDaysQuery): Promise<any> => {
+    try {
+        const res = await api.get(`/auth/v1/activity-days`, { params: query });
+        return res.data;
+    } catch (error: any) {
+        console.log("Error getting activity days:", error.response.data); // Debug log
+        throw error;
+    }
+};
+
+// create reading session
+export const createReadingSessionAPI = async (chapterNumber: number, verseNumber: number) => {
+    try {
+        const res = await api.post(`/auth/v1/reading-sessions`, { 
+            chapterNumber: chapterNumber,
+            verseNumber: verseNumber,
+        });
+
+        return res.data;
+    } catch (error: any) {
+        console.log("Error create reading session:", error.response.data); // Debug log
+        throw error;
+    }
+}

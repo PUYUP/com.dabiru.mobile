@@ -6,14 +6,7 @@ const persistConfig = {
   key: 'config',
   storage: AsyncStorage,
   whitelist: [
-    'theme',
-    'reading',
-    'quranReaderStyles',
-    'translations',
-    'tafsirs',
-    'audio',
-    'language',
-    'userHasCustomised',
+    'preferences',
   ],
 };
 

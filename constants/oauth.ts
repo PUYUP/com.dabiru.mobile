@@ -12,4 +12,4 @@ export const QF_DISCOVERY = {
   revocationEndpoint: `${QF_AUTH_BASE_URL}/oauth2/revoke`,
 };
 
-export const MUSHAF_ID = 7; // Indopak16Lines
+export const MUSHAF_ID = 1; // Tajweed

@@ -32,4 +32,13 @@ export interface ActivityPayload {
     ranges: string[]; // ayah range -> 1:5-1:10
     mushafId: number;
     type: GoalCategory;
+    date?: string;
+}
+
+export interface ActivityDaysQuery {
+    from: string;
+    to: string;
+    type: GoalCategory;
+    first?: number;
+    last?: number;
 }

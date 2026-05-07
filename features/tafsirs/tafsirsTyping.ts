@@ -11,3 +11,10 @@ export type GoalResponse = {
     created_at: string;
     updated_at: string;
 } & CreateGoalPayload;
+
+export type GetVerseQuery = {
+    language: string;
+    translations: string;
+    tafsirs: string;
+    fields: string;
+}

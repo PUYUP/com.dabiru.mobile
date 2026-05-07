@@ -72,6 +72,8 @@ api.interceptors.response.use(
     setRefreshing(true);
 
     try {
+      console.log('Refresing token...');
+      
       // 🔥 Hit endpoint refresh token
       const { data } = await axios.post(
         `${baseUrl}/auth/v1/token/refresh`,

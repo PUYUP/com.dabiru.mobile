@@ -1,6 +1,19 @@
+import api from "@/services/apiClient";
 import { supabase } from "@/services/supabase";
-import { CreateGoalPayload, GoalResponse } from "./tafsirsTyping";
+import { CreateGoalPayload, GetVerseQuery, GoalResponse } from "./tafsirsTyping";
 
+// get tafsirs information
+export const getTafsirsAPI = async (payload: string) => {
+    try {
+        const res = await api.get(`/content/api/v4/resources/tafsirs`);
+        return res.data;
+    } catch (error: any) {
+        console.log("Error getting tafsirs:", error.response.data); // Debug log
+        throw error;
+    }
+}
+
+// create a goal
 export const createGoalAPI = async (payload: CreateGoalPayload): Promise<GoalResponse> => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -51,3 +64,37 @@ export const updateActiveGoalAPI = async (goal_id: number, payload: Partial<Crea
 
     return data;
 };
+
+// get Uthmani Tajweed by key
+export const getUthmaniTajweedWithKeyAPI = async (verseKey: string) => {
+    const query = {
+        verse_key: verseKey,
+    }
+
+    try {
+        const res = await api.get(`/content/api/v4/quran/verses/uthmani_tajweed`, { params: query });
+        return res.data;
+    } catch (error: any) {
+        console.log("Error get Uthmani Tajweed:", error.response.data); // Debug log
+        throw error;
+    }
+}
+
+// get verse by key
+export const getVerseByKeyAPI = async (verseKey: string, query: GetVerseQuery) => {
+    const q = {
+        language: query.language,
+        tafsirs: 169, // force to ibnu kathir
+        fields: query.fields,
+        words: true,
+        translations: query.translations,
+    }
+
+    try {
+        const res = await api.get(`/content/api/v4/verses/by_key/${verseKey}`, { params: q });
+        return res.data;
+    } catch (error: any) {
+        console.log("Error get verse by key:", error.response.data); // Debug log
+        throw error;
+    }
+}

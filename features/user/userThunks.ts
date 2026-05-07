@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { addActivityAPI, createGoalAPI, getGoalAPI, updateGoalAPI } from "./userAPI";
-import { ActivityPayload, GoalPayload } from "./userTyping";
+import { addActivityAPI, createGoalAPI, createReadingSessionAPI, getActivityDaysAPI, getGoalAPI, updateGoalAPI } from "./userAPI";
+import { ActivityDaysQuery, ActivityPayload, GoalPayload } from "./userTyping";
 
 // create goal
 export const createGoal = createAsyncThunk(
@@ -31,5 +31,21 @@ export const addActivity = createAsyncThunk(
     'user/addActivity',
     async (payload: ActivityPayload) => {
         return await addActivityAPI(payload);
+    }
+);
+
+// get activity days
+export const getActivityDays = createAsyncThunk(
+    'user/getActivityDays',
+    async (query: ActivityDaysQuery) => {
+        return await getActivityDaysAPI(query);
+    }
+);
+
+// create reading session
+export const createReadingSession = createAsyncThunk(
+    'user/createReadingSession',
+    async (payload: { chapterNumber: number, verseNumber: number }) => {
+        return await createReadingSessionAPI(payload.chapterNumber, payload.verseNumber);
     }
 );
