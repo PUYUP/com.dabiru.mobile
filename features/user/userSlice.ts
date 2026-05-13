@@ -1,5 +1,5 @@
 import { createSlice, SerializedError } from "@reduxjs/toolkit";
-import { addActivity, createGoal, createReadingSession, getActivityDays, getGoal, updateGoal } from "./userThunks";
+import { addActivity, createGoal, createReadingSession, getActivityDays, getGoal, getLatestSession, updateGoal } from "./userThunks";
 import { GoalInfo } from "./userTyping";
 
 const initialState = {
@@ -14,6 +14,11 @@ const initialState = {
         error: null as SerializedError | null,
     },
     createSession: {
+        data: null as any | null,
+        loading: false,
+        error: null as SerializedError | null,
+    },
+    latestSession: {
         data: null as any | null,
         loading: false,
         error: null as SerializedError | null,
@@ -40,7 +45,7 @@ const userSlice = createSlice({
                 }
             })
             .addCase(updateGoal.fulfilled, (state, action) => {
-                console.log("Goal updated successfully:", action.payload)
+                console.log("Goal updated successfully!")
             })
 
             // getting daily goals
@@ -103,6 +108,19 @@ const userSlice = createSlice({
                 state.createSession.error = null;
 
                 console.log("Reading session created:", payload);
+            })
+
+            // get latest session
+            .addCase(getLatestSession.pending, (state) => {
+                state.latestSession.loading = true;
+                state.latestSession.error = null;
+            })
+            .addCase(getLatestSession.fulfilled, (state, { payload }) => {
+                state.latestSession.loading = false;
+                state.latestSession.error = null;
+                state.latestSession.data = payload.data && payload.data.length > 0 ? payload.data[0] : null;
+
+                console.log("Get latest session success:", payload);
             })
     }
 });

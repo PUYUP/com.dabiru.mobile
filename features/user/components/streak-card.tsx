@@ -63,12 +63,12 @@ interface CircularProgressProps {
 }
 
 function CircularProgress({ current, goal }: CircularProgressProps) {
+  const theme = useTheme();
+
   const RADIUS = 86;
   const STROKE = 16;
   const normalizedRadius = RADIUS - STROKE / 2;
   const circumference = 2 * Math.PI * normalizedRadius;
-
-  console.log(current, goal)
 
   const ARC_RATIO = 0.80;
   const arcLength = circumference * ARC_RATIO;
@@ -107,8 +107,8 @@ function CircularProgress({ current, goal }: CircularProgressProps) {
       >
         <Defs>
           <LinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%"   stopColor="#22C55E" />
-            <Stop offset="100%" stopColor="#16A34A" />
+            <Stop offset="0%"   stopColor={`${theme.colors.primaryContainer}`} />
+            <Stop offset="100%" stopColor={`${theme.colors.primary}`} />
           </LinearGradient>
         </Defs>
 
@@ -352,10 +352,11 @@ export default function StreakCard() {
   }
 
   // calculate progress in percentage
-  const percentage = goal.secondsRead ? 
-    (Math.round(((goal.secondsRead + (goal.manuallyAddedSeconds ? goal.manuallyAddedSeconds : 0)) / goal.data.dailyTargetSeconds) * 100))
-    : '0';
-
+  const totalSeconds = (goal.data.secondsRead ?? 0) + (goal.data.manuallyAddedSeconds ?? 0);
+  const percentage = goal.data.dailyTargetSeconds 
+    ? Math.round((totalSeconds / goal.data.dailyTargetSeconds) * 100)
+    : 0;
+  
   return (
     <React.Fragment>
       <View style={styles.container}>
@@ -381,7 +382,7 @@ export default function StreakCard() {
               <View style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 32, flexDirection: 'row' }}>
                 <View>
                   <View style={styles.circleWrapper}>
-                    <CircularProgress current={goal.data.secondsRead} goal={goal.data} />
+                    <CircularProgress current={(goal.data.secondsRead + goal.data.manuallyAddedSeconds)} goal={goal.data} />
                     <Text style={styles.todayLabel}>{percentage + '%'}</Text>
                   </View>
                 </View>

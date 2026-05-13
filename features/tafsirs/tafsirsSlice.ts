@@ -1,5 +1,5 @@
 import { createSlice, SerializedError } from "@reduxjs/toolkit";
-import { createGoal, getTafsirs, getUthmaniTajweedWithKey, getVerseByKey } from "./tafsirsThunk";
+import { createGoal, getTafsirs, getUthmaniTajweedWithKey, getVerseById, getVerseByKey } from "./tafsirsThunk";
 import { GoalResponse } from "./tafsirsTyping";
 
 const initialState = {
@@ -35,7 +35,6 @@ const tafsirsSlice = createSlice({
             })
             .addCase(getTafsirs.fulfilled, (state, { payload }) => {
                 console.log('Getting tafsirs success!');
-                console.log(payload);
                 state.tafsirs.loading = false;
                 state.tafsirs.error = null;
             })
@@ -63,11 +62,9 @@ const tafsirsSlice = createSlice({
                 state.uthmaniTajweed.error = null;
             })
             .addCase(getUthmaniTajweedWithKey.fulfilled, (state, { payload }) => {
-                const verses = payload.verses.map((item: any) => item.text_uthmani_tajweed);
-
                 state.uthmaniTajweed.loading = false;
                 state.uthmaniTajweed.error = null;
-                state.uthmaniTajweed.data = verses.join(' ');
+                state.uthmaniTajweed.data = payload?.verses?.[0];
             })
             .addCase(getUthmaniTajweedWithKey.rejected, (state, { error }) => {
                 state.uthmaniTajweed.loading = false;
@@ -88,6 +85,24 @@ const tafsirsSlice = createSlice({
             })
             .addCase(getVerseByKey.rejected, (state, { error }) => {
                 console.log('Getting verse by key failure!');
+                state.verse.loading = false;
+                state.verse.error = error;
+            })
+
+            // get verse by id
+            .addCase(getVerseById.pending, (state) => {
+                console.log('Getting verse by id...');
+                state.verse.loading = true;
+                state.verse.error = null;
+            })
+            .addCase(getVerseById.fulfilled, (state, { payload }) => {
+                console.log('Getting verse by id success!');
+                state.verse.loading = false;
+                state.verse.error = null;
+                state.verse.data = payload.verse;
+            })
+            .addCase(getVerseById.rejected, (state, { error }) => {
+                console.log('Getting verse by id failure!');
                 state.verse.loading = false;
                 state.verse.error = error;
             })

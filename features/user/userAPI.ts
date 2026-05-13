@@ -103,3 +103,19 @@ export const createReadingSessionAPI = async (chapterNumber: number, verseNumber
         throw error;
     }
 }
+
+// get latest session
+export const getLatestSessionAPI = async () => {
+    try {
+        const res = await api.get(`/auth/v1/reading-sessions`, { 
+            params: {
+                first: 1,
+            }
+        });
+
+        return res.data;
+    } catch (error: any) {
+        console.log("Error get latest session:", error.response.data); // Debug log
+        throw error;
+    }
+}

@@ -16,7 +16,7 @@ const Index = () => {
     // Login flow
     const { login, isReady } = useQFAuth();
     const continueHandler = () => {
-        console.log("Continue with Quran.Foundation");
+        console.info("Continue with Quran.Foundation");
         login();
     };
 

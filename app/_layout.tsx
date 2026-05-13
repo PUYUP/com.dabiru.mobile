@@ -7,15 +7,19 @@ import { Provider, useSelector } from 'react-redux';
 
 import { theme } from '@/constants/theme';
 import { getConfig } from '@/features/config/configThunks';
+import { getAllChapters } from '@/features/reading/readingThunk';
 import { createGoal } from '@/features/user/userThunks';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux-hooks';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useQFAutoRefreshToken } from '@/hooks/use-qf-auto-refresh-token';
+import { supabase } from '@/services/supabase';
 import { persistor, store } from '@/store/store';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React, { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { PaperProvider } from 'react-native-paper';
+import 'react-native-url-polyfill/auto';
 import { PersistGate } from 'redux-persist/lib/integration/react';
 
 export const unstable_settings = {
@@ -70,7 +74,6 @@ function RootNav() {
       // redirecting...
       router.replace('/(tabs)');
     }
-
   }, [isAuthenticated, selectedLanguage, isRehydrated, segments]);
 
   // Listen supabase signup
@@ -81,10 +84,10 @@ function RootNav() {
     if (supabaseUser) {
       const lastSignIn = getUnixTime(new Date(supabaseUser.last_sign_in_at));
       const createdAt = getUnixTime(new Date(supabaseUser.created_at));
-      const isNew = lastSignIn == createdAt;
+      const isNew = Math.abs(lastSignIn - createdAt) < 5;
 
       if (isNew) {
-        console.log("New user detected...");
+        console.info("New user detected...");
 
         // create default goal
         dispatch(createGoal({ 
@@ -96,6 +99,25 @@ function RootNav() {
       }
     }
   }, [supabaseUser]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        supabase.auth.startAutoRefresh();
+      } else {
+        supabase.auth.stopAutoRefresh();
+      }
+    });
+
+    // start once
+    supabase.auth.startAutoRefresh();
+
+    dispatch(getAllChapters() as any);
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

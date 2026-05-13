@@ -1,5 +1,6 @@
 import { setTokens } from '@/features/auth/authSlice';
 import { revokeToken } from '@/features/auth/authThunks';
+import readingReducer from '@/features/reading/readingSlice';
 import tafsirsReducer from '@/features/tafsirs/tafsirsSlice';
 import userReducer from '@/features/user/userSlice';
 import { setOnTokenRefreshed, setOnTokenRevoked, setRefreshTokenGetter, setTokenGetter } from '@/services/tokenProvider';
@@ -14,6 +15,7 @@ export const store = configureStore({
     user: userReducer,
     config: configPersistedReducer,
     tafsirs: tafsirsReducer,
+    reading: readingReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

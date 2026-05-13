@@ -59,6 +59,7 @@ export const theme = {
   colors: {
     ...MD3LightTheme.colors,
     primary: '#258c91',
+    primaryContainer: '#33adb3',
     secondary: '#242424',
     elevation: {
       ...MD3LightTheme.colors.elevation,
