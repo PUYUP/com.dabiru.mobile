@@ -1,5 +1,5 @@
 /**
- * StreakCard.tsx
+ * StrikeCard.tsx
  *
  * Dependencies to install:
  *   npm install react-native-svg
@@ -24,12 +24,12 @@ import {
 import { useTheme } from 'react-native-paper';
 import Skeleton from "react-native-reanimated-skeleton";
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { getActivityDays, getGoal } from '../userThunks';
+import { getActivityDays, getFailedStrike, getGoal, getLongestStrike } from '../userThunks';
 import { ActivityDaysQuery, GoalInfo } from '../userTyping';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface StreakInfo {
+interface StrikeInfo {
   id: string;
   icon: React.ComponentProps<typeof MaterialIcons>['name'];
   color: string;
@@ -38,7 +38,7 @@ interface StreakInfo {
   unit: string;
   num: number;
   isCurrent: boolean;
-  isStreaked: boolean;
+  isStrikeed: boolean;
   isPastDay: boolean;
   date: string;
 }
@@ -46,9 +46,9 @@ interface StreakInfo {
 // ─── Static Data ──────────────────────────────────────────────────────────────
 
 const STREAK_DATA = [
-  { id: 'current', icon: 'whatshot' as const, color: '#EF4444', label: 'Streak', value: '5',     unit: 'days' },
-  { id: 'longest', icon: 'star'     as const, color: '#03C430', label: 'Longest', value: '1.321', unit: 'days' },
-  { id: 'failed',  icon: 'cancel'   as const, color: '#F59E0B', label: 'Days failed',  value: '24',    unit: 'days' },
+  { id: 'current', icon: 'whatshot' as const, color: '#EF4444', label: 'Strike', value: '0',     unit: 'days' },
+  { id: 'longest', icon: 'star'     as const, color: '#03C430', label: 'Longest', value: '0', unit: 'days' },
+  { id: 'failed',  icon: 'cancel'   as const, color: '#F59E0B', label: 'Days failed',  value: '0',    unit: 'days' },
 ];
 
 // ─── Animated Circle ──────────────────────────────────────────────────────────
@@ -150,28 +150,28 @@ function CircularProgress({ current, goal }: CircularProgressProps) {
 
 interface DayDotProps {
   index: number;
-  data: StreakInfo;
+  data: StrikeInfo;
 }
 
 function DayDot({ index, data }: DayDotProps) {
   // BUG FIX: The original backgroundColor logic had a redundant ternary —
   // both the false branches of `isCurrent` resolved to `dotBg` (#F1F5F9),
-  // meaning `streakedBg` was never actually applied. Fixed the priority:
-  // isCurrent → current tint; isStreaked → streak tint; else → neutral.
+  // meaning `strikeedBg` was never actually applied. Fixed the priority:
+  // isCurrent → current tint; isStrikeed → strike tint; else → neutral.
   let dotBg = data.isCurrent
     ? '#FEF3C7'
-    : data.isStreaked
+    : data.isStrikeed
     ? '#cff0cf'
-    : !data.isStreaked ? data.isPastDay ? 'rgb(248, 215, 212)' : '#F1F5F9'
+    : !data.isStrikeed ? data.isPastDay ? 'rgb(248, 215, 212)' : '#F1F5F9'
     : '#F1F5F9';
 
   const dotColor = data.isCurrent 
     ? '#D97706' 
-    : !data.isStreaked ? 
+    : !data.isStrikeed ? 
       data.isPastDay ? '#c10' : '#949eac'
       : '#949eac';
 
-  const streakColor = data.isStreaked
+  const strikeColor = data.isStrikeed
     ? data.isCurrent ? dotColor : '#2e8b57'
     : data.isPastDay ? '#c10' : '#94A3B8';
   
@@ -181,7 +181,7 @@ function DayDot({ index, data }: DayDotProps) {
         {data.label}
       </Text>
       <View style={[styles.dayDot, { backgroundColor: dotBg }]}>
-        <Text style={[styles.dayDotText, { color: data.isStreaked ? streakColor : dotColor }]}>
+        <Text style={[styles.dayDotText, { color: data.isStrikeed ? strikeColor : dotColor }]}>
           {data.value}
         </Text>
       </View>
@@ -189,14 +189,14 @@ function DayDot({ index, data }: DayDotProps) {
   );
 }
 
-// ─── StreakInfoItem ───────────────────────────────────────────────────────────
+// ─── StrikeInfoItem ───────────────────────────────────────────────────────────
 
-interface StreakInfoItemProps {
+interface StrikeInfoItemProps {
   item: typeof STREAK_DATA[number];
   goal: GoalInfo;
 }
 
-function StreakInfoItem({ item, goal }: StreakInfoItemProps) {
+function StrikeInfoItem({ item, goal }: StrikeInfoItemProps) {
   // BUG FIX: `goal?.label + 's'` produced "undefined" + 's' = "undefineds"
   // when goal was undefined. Added a proper fallback.
   const unitLabel = 'days';
@@ -265,12 +265,12 @@ const TODAY_STR = format(TODAY, 'yyyy-MM-dd');
 const TODAY_TIMESTAMP = getUnixTime(TODAY_STR);
 
 // BUG FIX: `Math.random()` was called inside a useEffect with [mode] as the
-// dependency, which means every mode switch re-randomises the streak data,
+// dependency, which means every mode switch re-randomises the strike data,
 // causing inconsistent UI. Extracted to stable builder functions so the
 // random values are only generated once per mode (or replaced with real data).
 // In production these functions would receive actual session data as a param.
 
-function buildDailyStreaks(): StreakInfo[] {
+function buildDailyStrikes(): StrikeInfo[] {
   return generateDays().map((d) => {
     const day = format(d.startDate, 'yyyy-MM-dd');
     const dayTs = getUnixTime(day);
@@ -285,7 +285,7 @@ function buildDailyStreaks(): StreakInfo[] {
       num: d.day,
       date: day,
       isCurrent: day === TODAY_STR,
-      isStreaked: Math.random() > 0.5,
+      isStrikeed: Math.random() > 0.5,
       isPastDay: dayTs < TODAY_TIMESTAMP,
     }
   });
@@ -293,13 +293,17 @@ function buildDailyStreaks(): StreakInfo[] {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function StreakCard() {
+export default function StrikeCard() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const theme = useTheme();
-  const [streaks, setStreaks] = useState<StreakInfo[]>(() => buildDailyStreaks());
+  const [strikes, setStrikes] = useState<StrikeInfo[]>(() => buildDailyStrikes());
+  const [strikesData, setStrikesData] = useState<any[]>(STREAK_DATA);
+  const longestStrike = useAppSelector((state: any) => state.user.longestStrike);
+  const failedStrike = useAppSelector((state: any) => state.user.failedStrike);
 
   const now = new Date();
+  const todayDate = format(now, "yyyy-MM-dd");
   const startDate = format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
   const endDate = format(endOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
 
@@ -318,36 +322,91 @@ export default function StreakCard() {
 
     dispatch(getActivityDays({...query}) as any);
     dispatch(getGoal() as any);
+    dispatch(getLongestStrike() as any);
+    dispatch(getFailedStrike() as any);
   }, []);
 
   const goal = useAppSelector((state: any) => state.user.goal);
   const activityDays = useAppSelector((state: any) => state.user.activityDays);
 
   useEffect(() => {
-    if (!activityDays.loading && activityDays.data) {
-      // set streaks
-      const streaksFromActivities = buildDailyStreaks().map((s: StreakInfo) => {
-        const activity = activityDays.data.find((item: any) => {
-          return item.date == s.date;
-        });
+    if (activityDays.loading) return;
+    if (!activityDays.data) return;
 
-        const manuallyAddedSeconds = activity && activity.manuallyAddedSeconds ? activity.manuallyAddedSeconds : 0;
-        const value = activity && (activity.secondsRead || manuallyAddedSeconds)? 
-          Math.round(((activity.secondsRead + manuallyAddedSeconds) / 60)).toString()
-          : '0';
-
-        return {
-          ...s,
-          value: value,
-          isStreaked: activity ? ((activity.secondsRead + manuallyAddedSeconds) >= activity.dailyTargetSeconds) : false,
-        };
+    // set strikes
+    const strikesFromActivities = buildDailyStrikes().map((s: StrikeInfo) => {
+      const activity = activityDays.data.find((item: any) => {
+        return item.date == s.date;
       });
 
-      setStreaks(streaksFromActivities);
-    }
+      const manuallyAddedSeconds = activity && activity.manuallyAddedSeconds ? activity.manuallyAddedSeconds : 0;
+      const value = activity && (activity.secondsRead || manuallyAddedSeconds)? 
+        Math.round(((activity.secondsRead + manuallyAddedSeconds) / 60)).toString()
+        : '0';
+
+      return {
+        ...s,
+        value: value,
+        isStrikeed: activity ? ((activity.secondsRead + manuallyAddedSeconds) >= activity.dailyTargetSeconds) : false,
+      };
+    });
+
+    setStrikes(strikesFromActivities);
+
+    // fill value for strikes array
+    const currentStrike = strikesFromActivities.find((item: any) => item.date == todayDate);
+
+    setStrikesData((prev: any) => {
+      const index = prev.findIndex((item: any) => item.id == 'current');
+      return [
+        ...prev.slice(0, index),
+        {
+          ...prev[index],
+          value: currentStrike?.value ?? 0,
+        },
+        ...prev.slice(index + 1),
+      ];
+    });
   }, [activityDays]);
 
-  if (goal.loading || !goal.data) {
+  // longest strike
+  useEffect(() => {
+    if (longestStrike.loading) return;
+    if (!longestStrike.data) return;
+
+    setStrikesData((prev: any) => {
+      const index = prev.findIndex((item: any) => item.id == 'longest');
+      return [
+        ...prev.slice(0, index),
+        {
+          ...prev[index],
+          value: longestStrike.data.total_strikes,
+        },
+        ...prev.slice(index + 1),
+      ];
+    });
+  }, [longestStrike]);
+
+  // failed strike
+  useEffect(() => {
+    if (failedStrike.loading) return;
+    if (!failedStrike.data) return;
+
+    setStrikesData((prev: any) => {
+      const index = prev.findIndex((item: any) => item.id == 'failed');
+      return [
+        ...prev.slice(0, index),
+        {
+          ...prev[index],
+          value: failedStrike.data.total_failed_days,
+        },
+        ...prev.slice(index + 1),
+      ];
+    });
+  }, [failedStrike]);
+
+  // loading placeholder
+  if (goal.loading || !goal.data || longestStrike.loading || failedStrike.loading) {
     return <LoadingSkeleton />;
   }
 
@@ -388,14 +447,14 @@ export default function StreakCard() {
                 </View>
 
                 <View style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 16, paddingTop: 6, gap: 10 }}>
-                  {STREAK_DATA.map((item: any) => {
+                  {strikesData.map((item: any) => {
                     return (
-                      <View key={item.id} style={styles.streakItem}>
+                      <View key={item.id} style={styles.strikeItem}>
                         <MaterialIcons name={item.icon} size={24} color={item.color} />
 
                         <View>
-                          <Text style={styles.streakLabel}>{item.label}</Text>
-                          <Text style={styles.streakValue}>{item.value}</Text>
+                          <Text style={styles.strikeLabel}>{item.label}</Text>
+                          <Text style={styles.strikeValue}>{item.value}</Text>
                         </View>
                       </View>
                     )
@@ -407,7 +466,7 @@ export default function StreakCard() {
                 <View style={styles.dotGrid}>
                   <FlatList
                     scrollEnabled={false}
-                    data={streaks}
+                    data={strikes}
                     keyExtractor={(item) => item.id}
                     numColumns={7}
                     showsHorizontalScrollIndicator={false}
@@ -421,7 +480,7 @@ export default function StreakCard() {
           </View>
         </View>
 
-        {/* ── Streak Info ── */}
+        {/* ── Strike Info ── */}
         {/*
         <View style={styles.infoContainer}>
           <FlatList
@@ -431,7 +490,7 @@ export default function StreakCard() {
             numColumns={3}
             style={styles.infoList}
             columnWrapperStyle={styles.infoRow}
-            renderItem={({ item }) => <StreakInfoItem item={item} goal={goal.data} />}
+            renderItem={({ item }) => <StrikeInfoItem item={item} goal={goal.data} />}
           />
         </View>
         */}
@@ -575,7 +634,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
 
-  // Streak Info FlatList
+  // Strike Info FlatList
   infoContainer: {
     width: '100%',
     marginTop: 16,
@@ -628,8 +687,8 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  // streak
-  streakItem: {
+  // strike
+  strikeItem: {
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
@@ -640,11 +699,11 @@ const styles = StyleSheet.create({
     borderColor: '#e2e2e2',
     borderRadius: 14,
   },
-  streakLabel: {
+  strikeLabel: {
     fontSize: 12,
     color: '#828fa1',
   },
-  streakValue: {
+  strikeValue: {
     marginTop: 2,
     fontSize: 16,
     fontWeight: 700,

@@ -1,21 +1,20 @@
-import VerseForRead from '@/features/tafsirs/components/verse-for-read';
-import StrikeCard from '@/features/user/components/strike-card';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { useQFAuth } from '@/hooks/use-qf-auth';
+import { Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function HomeScreen() {
+export default function TabTwoScreen() {
+  const { login, isReady } = useQFAuth();
+  const { logout } = useQFAuth();
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView nestedScrollEnabled={true}>
         <View style={styles.scrollContent}>
-          <View style={{ marginBottom: 16, paddingHorizontal: 16 }}>
-            <StrikeCard />
-          </View>
-
-          <View style={{ marginBottom: 16, paddingHorizontal: 16 }}>
-            <VerseForRead />
-          </View>
+          <Button mode="contained" onPress={logout}>
+            Logout
+          </Button>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -31,7 +30,4 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
   },
-  profileRow: {
-    marginBottom: 16,
-  }
 });

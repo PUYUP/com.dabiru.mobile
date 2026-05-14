@@ -8,6 +8,7 @@ import RenderHtml, {
 interface Props {
     htmlText: string;
     italic?: boolean;
+    fontSize?: number;
 }
 
 const tajweedModel = HTMLElementModel.fromCustomModel({
@@ -46,7 +47,7 @@ const renderers: CustomTagRendererRecord = {
     },
 };
 
-export default function TextRenderer({ htmlText, italic = false }: Props) {
+export default function TextRenderer({ htmlText, italic = false, fontSize = 18 }: Props) {
     const { width } = useWindowDimensions();
     if (!htmlText) return null;
 
@@ -61,8 +62,8 @@ export default function TextRenderer({ htmlText, italic = false }: Props) {
                 baseStyle={{
                     textAlign: 'left',
                     writingDirection: 'ltr',
-                    fontSize: 17,
-                    lineHeight: 28,
+                    fontSize,
+                    lineHeight: fontSize * 1.65,
                     fontStyle: italic ? 'italic' : 'normal',
                     fontFamily: italic ? 'Georgia' : undefined,
                 }}
@@ -75,7 +76,7 @@ export default function TextRenderer({ htmlText, italic = false }: Props) {
                         marginBottom: 16,
                     },
                     sup: {
-                        fontSize: 12,
+                        fontSize: fontSize * 0.7,
                         display: 'none',
                     },
                 }}
@@ -86,6 +87,6 @@ export default function TextRenderer({ htmlText, italic = false }: Props) {
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: '#fff',
+        backgroundColor: 'transparent',
     },
 });

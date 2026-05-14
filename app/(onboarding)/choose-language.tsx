@@ -1,45 +1,122 @@
-import { bulkUpdateConfig, getLanguages, getTranslations } from "@/features/config/configThunks";
+import { bulkUpdateConfig, getLanguages, getTafsirs, getTranslations } from "@/features/config/configThunks";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import CountryFlag from "react-native-country-flag";
 import { Button, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// currently only language have ibnu kathir tafsirs
-const LANGUAGES = [
-    { 
-        flag: 'gb', 
-        iso_code: 'en', 
-        name: 'English', 
-        language_id: 84,
-        language_name: 'english',
-        tafsir_slug: 'en-tafisr-ibn-kathir',
-    },
-    { 
-        flag: 'id', 
-        iso_code: 'id', 
-        name: 'Bahasa Indonesia', 
-        language_id: 33,
-        language_name: 'indonesian',
-        tafsir_slug: 'id-tafsir-ibn-kathir' 
+type TafsirEntry = {
+    author_name: string | null;
+    id: number;
+    language_name: string;
+    name: string;
+    slug: string;
+    translated_name: object;
+};
+
+type TranslationEntry = {
+    author_name: string | null;
+    id: number;
+    language_name: string;
+    name: string;
+    slug: string | null;
+    translated_name: {
+        language_name: string;
+        name: string;
+    };
+};
+
+type LanguageEntry = {
+    id: number;
+    name: string;
+    native_name: string;
+    iso_code: string;
+    direction: string;
+};
+
+type FallbackLanguage = LanguageEntry & {
+    tafsir: TafsirEntry;
+};
+
+type MergedLanguageConfig = {
+    language: LanguageEntry;
+    tafsir: TafsirEntry | null;
+    translation: TranslationEntry | null;
+};
+
+const KATHIR_SLUG_PATTERNS = [
+    /kath[iī]r/i,
+    /katheer/i,
+    /kats[iī]r/i,
+    /kas[ei]r/i,
+    /katir/i,
+    /kacir/i,
+];
+
+const FALLBACK_LANGUAGES: FallbackLanguage[] = [
+    {
+        id: 33,
+        name: 'indonesian',
+        native_name: 'Bahasa Indonesia',
+        iso_code: 'id',
+        direction: 'ltr',
+        tafsir: {
+            id: 134,
+            author_name: 'Salim Bahreisy dan Said Bahreisy',
+            language_name: 'indonesian',
+            name: 'Tafsir Ibnu Katsir',
+            slug: 'id-tafsir-ibn-kathir',
+            translated_name: {},
+        },
     },
 ];
+
+function mergeLanguageConfigs(
+    languageList: LanguageEntry[],
+    tafsirList: TafsirEntry[],
+    translationList: TranslationEntry[]
+): MergedLanguageConfig[] {
+    const allLanguages = [
+        ...languageList,
+        ...FALLBACK_LANGUAGES.filter(
+            (f) => !languageList.some((l) => l.iso_code === f.iso_code)
+        ),
+    ];
+
+    return allLanguages.reduce<MergedLanguageConfig[]>((acc, language) => {
+        const fallback = FALLBACK_LANGUAGES.find((f) => f.iso_code === language.iso_code);
+
+        const tafsir = tafsirList.find(
+            (t) =>
+                KATHIR_SLUG_PATTERNS.some((pattern) => pattern.test(t.slug)) &&
+                t.language_name.toLowerCase() === language.name.toLowerCase()
+        ) ?? fallback?.tafsir ?? null;
+
+        if (!tafsir) return acc;
+
+        const translation = translationList.find(
+            (t) => t.language_name.toLowerCase() === language.name.toLowerCase()
+        ) ?? null;
+
+        acc.push({ language, tafsir, translation });
+        return acc;
+    }, []);
+}
 
 const LanguageItem = ({
     language,
     isSelected,
     onPress,
 }: {
-    language: any;
+    language: LanguageEntry;
     isSelected: boolean;
     onPress: () => void;
 }) => {
     const theme = useTheme();
     const accent = theme.colors.primary;
     const accentBorder = theme.colors.surfaceVariant;
-    const accentLight = theme.colors.primaryContainer;
+    const accentLight = theme.colors.surfaceVariant;
 
     return (
         <TouchableOpacity
@@ -50,7 +127,6 @@ const LanguageItem = ({
             onPress={onPress}
             activeOpacity={0.7}
         >
-            <CountryFlag isoCode={language.flag} size={22} />
             <Text style={[styles.languageName, isSelected && { color: accent, fontWeight: '500' }]}>
                 {language.native_name}
             </Text>
@@ -64,48 +140,37 @@ const LanguageItem = ({
 export default function ChooseLanguageScreen() {
     const dispatch = useAppDispatch();
     const router = useRouter();
-    const [selectedLang, setSelectedLang] = useState<string | null>(null);
-    const [selectedTafsir, setSelectedTafsir] = useState<string | null>(null);
-    const [selectedTranslation, setSelectedTranslation] = useState<string | null>(null);
-    const [languagesList, setLanguagesList] = useState<any[]>([]);
+    const [selectedConfig, setSelectedConfig] = useState<MergedLanguageConfig | null>(null);
+    const [mergedConfigs, setMergedConfigs] = useState<MergedLanguageConfig[]>([]);
 
     const languages = useAppSelector((state: any) => state.config.languages.data);
-    const translations = useAppSelector((state: any) => state.config.translations.data);
-
-    useEffect(() => {
-        if (languages) {
-            const used = languages
-                .filter((l: any) => 
-                    LANGUAGES.some((item: any) => item.iso_code === l.iso_code)
-                )
-                .map((l: any) => {
-                    const found = LANGUAGES.find((obj: any) => obj.iso_code == l.iso_code);
-                    return {
-                        ...l,
-                        flag: found?.flag,
-                        tafsir_slug: found?.tafsir_slug,
-                        language_id: found?.language_id,
-                    }
-                });
-
-            setLanguagesList(used);
-        }
-    }, [languages]);
-
-    const chooseHandler = (lang: string) => {
-        dispatch(bulkUpdateConfig({
-            language: { language: selectedLang },
-            tafsirs: { selectedTafsirs: [selectedTafsir] },
-            translations: { selectedTranslations: [selectedTranslation] },
-        }) as any);
-        
-        router.navigate('/(tabs)');
-    };
+    const translations = useAppSelector((state: any) => state.config.translations);
+    const tafsirs = useAppSelector((state: any) => state.config.tafsirs);
 
     useEffect(() => {
         dispatch(getLanguages() as any);
         dispatch(getTranslations() as any);
+        dispatch(getTafsirs() as any);
     }, []);
+
+    useEffect(() => {
+        if (!languages || !tafsirs.data || !translations.data) return;
+
+        const merged = mergeLanguageConfigs(languages, tafsirs.data, translations.data);
+        setMergedConfigs(merged);
+    }, [languages, tafsirs.data, translations.data]);
+
+    const chooseHandler = () => {
+        if (!selectedConfig) return;
+
+        dispatch(bulkUpdateConfig({
+            language: { language: selectedConfig.language.iso_code },
+            tafsirs: { selectedTafsirs: [selectedConfig.tafsir?.slug] },
+            translations: { selectedTranslations: [selectedConfig.translation?.id] },
+        }) as any);
+
+        router.navigate('/(tabs)');
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -116,27 +181,23 @@ export default function ChooseLanguageScreen() {
                 </View>
 
                 <FlatList
-                    data={languagesList}
+                    data={mergedConfigs}
                     renderItem={({ item }) => (
                         <LanguageItem
-                            language={item}
-                            isSelected={selectedLang === item.iso_code}
-                            onPress={() => {
-                                setSelectedLang(item.iso_code);
-                                setSelectedTafsir(item.tafsir_slug);
-                                setSelectedTranslation(item.language_id);
-                            }}
+                            language={item.language}
+                            isSelected={selectedConfig?.language.iso_code === item.language.iso_code}
+                            onPress={() => setSelectedConfig(item)}
                         />
                     )}
-                    keyExtractor={(item) => item.iso_code}
+                    keyExtractor={(item) => item.language.iso_code}
                     contentContainerStyle={styles.list}
                     showsVerticalScrollIndicator={false}
                 />
 
                 <Button
                     mode="contained"
-                    disabled={!selectedLang}
-                    onPress={() => { chooseHandler(selectedLang!); }}
+                    disabled={!selectedConfig}
+                    onPress={chooseHandler}
                     style={styles.continueButton}
                 >
                     <Text>Continue</Text>

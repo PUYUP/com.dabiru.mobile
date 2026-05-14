@@ -5,17 +5,26 @@ const BASE_URL = "https://qf-token-exchange.pointilis-noktah-teknologi.workers.d
 
 // ─── Retry Helper ────────────────────────────────────────────────────────────
 
+const isNonRetryableError = (error: any): boolean => {
+    // Supabase AuthError: code === 'user_already_exists'
+    if (error?.code === "user_already_exists") return true;
+    // HTTP 422 Unprocessable Entity
+    if (error?.status === 422) return true;
+    return false;
+};
+
 const withRetry = async <T>(
     fn: () => Promise<T>,
     retries: number = 1,
     delayMs: number = 300,
+    shouldSkipRetry?: (error: any) => boolean,
 ): Promise<T> => {
     try {
         return await fn();
     } catch (error) {
-        if (retries <= 0) throw error;
+        if (retries <= 0 || shouldSkipRetry?.(error)) throw error;
         await new Promise((resolve) => setTimeout(resolve, delayMs));
-        return withRetry(fn, retries - 1, delayMs);
+        return withRetry(fn, retries - 1, delayMs, shouldSkipRetry);
     }
 };
 
@@ -64,7 +73,7 @@ export const getUserProfileAPI = async () => {
         const res = await api.get("/quran-reflect/v1/users/profile");
         return res.data;
     } catch (error: any) {
-        console.error("Error fetching user profile:", error.response?.data);
+        console.log("Error fetching user profile:", error.response?.data);
         throw error;
     }
 };
@@ -72,16 +81,21 @@ export const getUserProfileAPI = async () => {
 // ─── Supabase Auth ────────────────────────────────────────────────────────────
 
 export const supabaseSignUpWithEmailAPI = async (email: string, password: string) => {
-    return withRetry(async () => {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+    return withRetry(
+        async () => {
+            const { data, error } = await supabase.auth.signUp({ email, password });
 
-        if (error) {
-            console.error("Supabase sign-up error:", error);
-            throw error;
-        }
+            if (error) {
+                console.log("Supabase sign-up error:", error);
+                throw error;
+            }
 
-        return data;
-    });
+            return data;
+        },
+        1,
+        300,
+        isNonRetryableError,
+    );
 };
 
 export const supabaseSignInWithEmailAPI = async (email: string, password: string) => {
@@ -89,7 +103,7 @@ export const supabaseSignInWithEmailAPI = async (email: string, password: string
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) {
-            console.error("Supabase sign-in error:", error);
+            console.log("Supabase sign-in error:", error);
             throw error;
         }
 
@@ -102,7 +116,7 @@ export const supabaseSignOutAPI = async () => {
         const { error } = await supabase.auth.signOut();
 
         if (error) {
-            console.error("Supabase sign-out error:", error);
+            console.log("Supabase sign-out error:", error);
             throw error;
         }
     });

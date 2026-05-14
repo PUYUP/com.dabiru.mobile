@@ -24,6 +24,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="history"
+        options={{
+          title: 'History',
+          tabBarIcon: ({ color }) => <MaterialIcons size={26} name='history' color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="account"
         options={{
           title: 'Account',

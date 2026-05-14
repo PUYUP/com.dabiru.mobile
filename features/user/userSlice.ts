@@ -1,5 +1,5 @@
 import { createSlice, SerializedError } from "@reduxjs/toolkit";
-import { addActivity, createGoal, createReadingSession, getActivityDays, getGoal, getLatestSession, updateGoal } from "./userThunks";
+import { addActivity, createGoal, createReadingSession, getActivityDays, getFailedStrike, getGoal, getLatestSession, getLongestStrike, updateGoal } from "./userThunks";
 import { GoalInfo } from "./userTyping";
 
 const initialState = {
@@ -19,6 +19,16 @@ const initialState = {
         error: null as SerializedError | null,
     },
     latestSession: {
+        data: null as any | null,
+        loading: false,
+        error: null as SerializedError | null,
+    },
+    longestStrike: {
+        data: null as any | null,
+        loading: false,
+        error: null as SerializedError | null,
+    },
+    failedStrike: {
         data: null as any | null,
         loading: false,
         error: null as SerializedError | null,
@@ -121,6 +131,40 @@ const userSlice = createSlice({
                 state.latestSession.data = payload.data && payload.data.length > 0 ? payload.data[0] : null;
 
                 console.log("Get latest session success:", payload);
+            })
+
+            // get longest strike
+            .addCase(getLongestStrike.pending, (state) => {
+                console.log('Get longest strike');
+                state.longestStrike.loading = true;
+                state.longestStrike.error = null;
+            })
+            .addCase(getLongestStrike.fulfilled, (state, { payload }) => {
+                console.log('Get longest strike success:', payload);
+                state.longestStrike.loading = false;
+                state.longestStrike.error = null;
+                state.longestStrike.data = payload;
+            })
+            .addCase(getLongestStrike.rejected, (state, { error }) => {
+                state.longestStrike.loading = false;
+                state.longestStrike.error = error;
+            })
+
+            // get failed strike
+            .addCase(getFailedStrike.pending, (state) => {
+                console.log('Get failed strike');
+                state.failedStrike.loading = true;
+                state.failedStrike.error = null;
+            })
+            .addCase(getFailedStrike.fulfilled, (state, { payload }) => {
+                console.log('Get failed strike success:', payload);
+                state.failedStrike.loading = false;
+                state.failedStrike.error = null;
+                state.failedStrike.data = payload;
+            })
+            .addCase(getFailedStrike.rejected, (state, { error }) => {
+                state.failedStrike.loading = false;
+                state.failedStrike.error = error;
             })
     }
 });

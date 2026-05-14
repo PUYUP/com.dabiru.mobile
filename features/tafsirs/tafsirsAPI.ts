@@ -1,22 +1,7 @@
 import api from "@/services/apiClient";
 import { supabase } from "@/services/supabase";
+import { withRetry } from "@/utils/retry-helper";
 import { CreateGoalPayload, GetVerseQuery, GoalResponse } from "./tafsirsTyping";
-
-// ─── Retry Helper ────────────────────────────────────────────────────────────
-
-const withRetry = async <T>(
-    fn: () => Promise<T>,
-    retries: number = 1,
-    delayMs: number = 300,
-): Promise<T> => {
-    try {
-        return await fn();
-    } catch (error) {
-        if (retries <= 0) throw error;
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-        return withRetry(fn, retries - 1, delayMs);
-    }
-};
 
 // ─── Auth Helper ─────────────────────────────────────────────────────────────
 
@@ -34,7 +19,7 @@ export const getTafsirsAPI = async (payload: string) => {
         const res = await api.get(`/content/api/v4/resources/tafsirs`);
         return res.data;
     } catch (error: any) {
-        console.error("Error getting tafsirs:", error.response?.data);
+        console.log("Error getting tafsirs:", error.response?.data);
         throw error;
     }
 }
@@ -50,7 +35,7 @@ export const createGoalAPI = async (payload: CreateGoalPayload): Promise<GoalRes
             .single();
 
         if (error) {
-            console.error("Error creating goal:", error);
+            console.log("Error creating goal:", error);
             throw error;
         }
 
@@ -69,7 +54,7 @@ export const getActiveGoalAPI = async (user_id: string): Promise<GoalResponse | 
             .single();
 
         if (error) {
-            console.error("Error fetching active goal:", error);
+            console.log("Error fetching active goal:", error);
             throw error;
         }
 
@@ -90,7 +75,7 @@ export const updateActiveGoalAPI = async (
             .single();
 
         if (error) {
-            console.error("Error updating active goal:", error);
+            console.log("Error updating active goal:", error);
             throw error;
         }
 
@@ -108,7 +93,7 @@ export const getUthmaniTajweedWithKeyAPI = async (verseKey: string) => {
         });
         return res.data;
     } catch (error: any) {
-        console.error("Error get Uthmani Tajweed:", error.response?.data);
+        console.log("Error get Uthmani Tajweed:", error.response?.data);
         throw error;
     }
 }
@@ -128,27 +113,7 @@ export const getVerseByKeyAPI = async (verseKey: string, query: GetVerseQuery) =
         const res = await api.get(`/content/api/v4/verses/by_key/${verseKey}`, { params: q });
         return res.data;
     } catch (error: any) {
-        console.error("Error get verse by key:", error.response?.data);
-        throw error;
-    }
-}
-
-// get verse by id
-export const getVerseByIdAPI = async (verseId: string, query: GetVerseQuery) => {
-    const q = {
-        language: query.language,
-        tafsirs: 169,
-        tafsir_fields: 'chapter_id,verse_key',
-        fields: query.fields,
-        words: false,
-        translations: query.translations,
-    }
-
-    try {
-        const res = await api.get(`/content/api/v4/verses/by_id/${verseId}`, { params: q });
-        return res.data;
-    } catch (error: any) {
-        console.error("Error get verse by id:", error.response?.data);
+        console.log("Error get verse by key:", error.response?.data);
         throw error;
     }
 }

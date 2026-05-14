@@ -1,8 +1,8 @@
 import { createSlice, SerializedError } from "@reduxjs/toolkit";
-import { bulkUpdateConfig, getConfig, getLanguages, getTranslations, updateConfig } from "./configThunks";
+import { bulkUpdateConfig, getConfig, getLanguages, getTafsirs, getTranslations, updateConfig } from "./configThunks";
 import { AppConfig } from "./configTyping";
 
-export const initialState: { preferences: AppConfig, languages: any, translations: any } = {
+export const initialState: { preferences: AppConfig, languages: any, translations: any, tafsirs: any } = {
   preferences: {
     theme: {
       type: "auto",
@@ -60,6 +60,11 @@ export const initialState: { preferences: AppConfig, languages: any, translation
     error: null as SerializedError | null,
   },
   translations: {
+    data: null,
+    loading: false,
+    error: null as SerializedError | null,
+  },
+  tafsirs: {
     data: null,
     loading: false,
     error: null as SerializedError | null,
@@ -184,6 +189,23 @@ const configSlice = createSlice({
       .addCase(getTranslations.rejected, (state, { error }) => {
         state.translations.loading = false;
         state.translations.error = error;
+      })
+
+      // get tafsirs
+      .addCase(getTafsirs.pending, (state, { meta }) => {
+        console.log('Get tafsirs...');
+        state.tafsirs.loading = true;
+        state.tafsirs.error = null;
+      })
+      .addCase(getTafsirs.fulfilled, (state, { payload }) => {
+        console.log('Get tafsirs succcess!');
+        state.tafsirs.loading = false;
+        state.tafsirs.error = null;
+        state.tafsirs.data = payload.tafsirs;
+      })
+      .addCase(getTafsirs.rejected, (state, { error }) => {
+        state.tafsirs.loading = false;
+        state.tafsirs.error = error;
       })
   },
 });

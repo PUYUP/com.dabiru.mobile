@@ -57,3 +57,14 @@ export const getTranslationsAPI = async () => {
     throw error;
   }
 };
+
+// get tafsirs
+export const getTafsirsAPI = async () => {
+  try {
+    const res = await api.get("/content/api/v4/resources/tafsirs");
+    return res.data;
+  } catch (error: any) {
+    console.log("Error getting translations:", error.response.data); // Debug log
+    throw error;
+  }
+};

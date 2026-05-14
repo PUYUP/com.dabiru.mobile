@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { bulkUpdateConfigAPI, getConfigAPI, getLanguagesAPI, getTranslationsAPI, updateConfigAPI } from "./configAPI";
+import { bulkUpdateConfigAPI, getConfigAPI, getLanguagesAPI, getTafsirsAPI, getTranslationsAPI, updateConfigAPI } from "./configAPI";
 import { UpdateConfigPayload } from "./configTyping";
 
 // get the config
@@ -42,5 +42,13 @@ export const getTranslations = createAsyncThunk(
   'config/getTranslations',
   async () => {
     return await getTranslationsAPI();
+  }
+);
+
+// get tafsirs
+export const getTafsirs = createAsyncThunk(
+  'config/getTafsirs',
+  async () => {
+    return await getTafsirsAPI();
   }
 );

@@ -1,6 +1,16 @@
 import { MUSHAF_ID } from "@/constants/oauth";
 import api from "@/services/apiClient";
-import { ActivityDaysQuery, ActivityPayload, GoalInfo, GoalPayload } from "./userTyping";
+import { supabase } from "@/services/supabase";
+import { withRetry } from "@/utils/retry-helper";
+import { ActivityDaysQuery, ActivityPayload, FailedStrikeDaysResult, GoalInfo, GoalPayload, LongestStrike } from "./userTyping";
+
+// ─── Auth Helper ─────────────────────────────────────────────────────────────
+
+const getAuthenticatedUserId = async (): Promise<string> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("User is not authenticated");
+    return session.user.id;
+};
 
 // create goal
 export const createGoalAPI = async (payload: GoalPayload): Promise<GoalPayload> => {
@@ -19,6 +29,27 @@ export const createGoalAPI = async (payload: GoalPayload): Promise<GoalPayload> 
         return res.data;
     } catch (error: any) {
         console.log("Error creating goal:", error.response.data); // Debug log
+        throw error;
+    }
+};
+
+// generate goal for 1 week
+export const generateWeeklyGoalAPI = async (payload: GoalPayload): Promise<GoalPayload> => {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    try {
+        const res = await api.post(
+            `/auth/v1/goals/estimate?mushafId=${MUSHAF_ID}`,
+            payload,
+            {
+                headers: {
+                    "x-timezone": timeZone
+                }
+            }
+        );
+        return res.data;
+    } catch (error: any) {
+        console.log("Error generating weekly goal:", error.response.data); // Debug log
         throw error;
     }
 };
@@ -119,3 +150,41 @@ export const getLatestSessionAPI = async () => {
         throw error;
     }
 }
+
+export const getLongestStrikeAPI = async (): Promise<LongestStrike> => {
+    const userId = await getAuthenticatedUserId();
+
+    return withRetry(async () => {
+        const { data, error } = await supabase
+            .rpc('get_longest_strike', {
+                p_user_id: userId,
+            });
+        
+        if (error) {
+            console.log("Error get longest strike:", error);
+            throw error;
+        }
+
+        return data[0];
+    });
+};
+
+export const getFailedStrikeAPI = async (): Promise<FailedStrikeDaysResult> => {
+    const userId = await getAuthenticatedUserId();
+
+    return withRetry(async () => {
+        const { data, error } = await supabase
+            .rpc('get_failed_strike_days', {
+                p_user_id: userId,
+                p_limit: 10,
+                p_offset: 0
+            });
+        
+        if (error) {
+            console.log("Error get failed strike:", error);
+            throw error;
+        }
+
+        return data;
+    });
+};

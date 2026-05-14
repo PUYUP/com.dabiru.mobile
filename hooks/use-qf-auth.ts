@@ -34,7 +34,7 @@ export function useQFAuth() {
         "content", 
         "goal", 
         "reading_session", 
-        "streak", 
+        "strike", 
         "user", 
         "post", 
         "comment",

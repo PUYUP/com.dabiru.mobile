@@ -66,6 +66,6 @@ export default function VerseRenderer({ verseText, fontSize = 26, lineHeight = 4
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: '#fff',
+        backgroundColor: 'transparent',
     },
 });

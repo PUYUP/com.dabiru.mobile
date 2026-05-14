@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { addActivityAPI, createGoalAPI, createReadingSessionAPI, getActivityDaysAPI, getGoalAPI, getLatestSessionAPI, updateGoalAPI } from "./userAPI";
+import { addActivityAPI, createGoalAPI, createReadingSessionAPI, generateWeeklyGoalAPI, getActivityDaysAPI, getFailedStrikeAPI, getGoalAPI, getLatestSessionAPI, getLongestStrikeAPI, updateGoalAPI } from "./userAPI";
 import { ActivityDaysQuery, ActivityPayload, GoalPayload } from "./userTyping";
 
 // create goal
@@ -7,6 +7,14 @@ export const createGoal = createAsyncThunk(
     'user/createGoal',
     async (payload: GoalPayload) => {
         return await createGoalAPI(payload);
+    }
+);
+
+// generate weekly goal
+export const generateWeeklyGoal = createAsyncThunk(
+    'user/generateWeeklyGoal',
+    async (payload: GoalPayload) => {
+        return await generateWeeklyGoalAPI(payload);
     }
 );
 
@@ -55,5 +63,21 @@ export const getLatestSession = createAsyncThunk(
     'user/getLatestSession',
     async () => {
         return await getLatestSessionAPI();
+    }
+);
+
+// get longest strike
+export const getLongestStrike = createAsyncThunk(
+    'user/getLongestStrike',
+    async () => {
+        return await getLongestStrikeAPI();
+    }
+);
+
+// get failed strike
+export const getFailedStrike = createAsyncThunk(
+    'user/getFailedStrike',
+    async () => {
+        return await getFailedStrikeAPI();
     }
 );

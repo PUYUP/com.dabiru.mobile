@@ -1,5 +1,5 @@
 import { createSlice, SerializedError } from "@reduxjs/toolkit";
-import { createGoal, getTafsirs, getUthmaniTajweedWithKey, getVerseById, getVerseByKey } from "./tafsirsThunk";
+import { createGoal, getTafsirs, getUthmaniTajweedWithKey, getVerseByKey } from "./tafsirsThunk";
 import { GoalResponse } from "./tafsirsTyping";
 
 const initialState = {
@@ -85,24 +85,6 @@ const tafsirsSlice = createSlice({
             })
             .addCase(getVerseByKey.rejected, (state, { error }) => {
                 console.log('Getting verse by key failure!');
-                state.verse.loading = false;
-                state.verse.error = error;
-            })
-
-            // get verse by id
-            .addCase(getVerseById.pending, (state) => {
-                console.log('Getting verse by id...');
-                state.verse.loading = true;
-                state.verse.error = null;
-            })
-            .addCase(getVerseById.fulfilled, (state, { payload }) => {
-                console.log('Getting verse by id success!');
-                state.verse.loading = false;
-                state.verse.error = null;
-                state.verse.data = payload.verse;
-            })
-            .addCase(getVerseById.rejected, (state, { error }) => {
-                console.log('Getting verse by id failure!');
                 state.verse.loading = false;
                 state.verse.error = error;
             })

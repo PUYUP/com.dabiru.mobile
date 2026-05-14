@@ -6,9 +6,10 @@ import 'react-native-reanimated';
 import { Provider, useSelector } from 'react-redux';
 
 import { theme } from '@/constants/theme';
+import { getUserProfile } from '@/features/auth/authThunks';
 import { getConfig } from '@/features/config/configThunks';
 import { getAllChapters } from '@/features/reading/readingThunk';
-import { createGoal } from '@/features/user/userThunks';
+import { generateWeeklyGoal } from '@/features/user/userThunks';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux-hooks';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useQFAutoRefreshToken } from '@/hooks/use-qf-auto-refresh-token';
@@ -89,12 +90,12 @@ function RootNav() {
       if (isNew) {
         console.info("New user detected...");
 
-        // create default goal
-        dispatch(createGoal({ 
-            type: 'QURAN_TIME',
-            amount: 900, // in seconds
-            duration: 1,
-            category: 'QURAN'
+        // generate default goal for one week
+        dispatch(generateWeeklyGoal({ 
+          type: 'QURAN_TIME',
+          amount: 900, // in seconds
+          duration: 1,
+          category: 'QURAN'
         }) as any);
       }
     }
@@ -112,6 +113,7 @@ function RootNav() {
     // start once
     supabase.auth.startAutoRefresh();
 
+    dispatch(getUserProfile() as any);
     dispatch(getAllChapters() as any);
 
     return () => {

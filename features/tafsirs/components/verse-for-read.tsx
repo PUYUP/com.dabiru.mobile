@@ -96,7 +96,7 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
             const ended = status === 'ended';
 
             setIsEnded(ended);
-            setSecondsRead(sbLatestSession.data.seconds_read ?? 0);
+            setSecondsRead(sbLatestSession.data.total_read_seconds ?? 0);
 
             if (ended) {
                 const nextVerseKey = getNextVerseKey(currentVerseKey, surahVerseCounts);
@@ -127,7 +127,17 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
             // no sb session
             initialVerse();
         }
-    }, [sbLatestSession.loading, sbLatestSession.data]); // ← tambah sbLatestSession.data
+    }, [sbLatestSession.loading]);
+
+    useEffect(() => {
+        if (sbLatestSession.data) {
+            const { status, current_chapter_number, current_verse_number } = sbLatestSession.data;
+            const ended = status === 'ended';
+
+            setIsEnded(ended);
+            setSecondsRead(sbLatestSession.data.total_read_seconds ?? 0);
+        }
+    }, [sbLatestSession.data]);
 
     // ─── Step 4: Handle setelah create session (dari tafsir-reader) ───────────
     useEffect(() => {
@@ -176,20 +186,40 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
                 },
             });
         } catch (e) {
-            console.error('router.push error:', e);
+            console.log('router.push error:', e);
         }
     };
 
     return (
         <View style={styles.card}>
             <View style={styles.header}>
-                <View style={{ display: 'flex', alignItems: 'center', flexDirection: 'row', gap: 6 }}>
-                    <MaterialIcons name="chrome-reader-mode" style={{ fontSize: 22 }} />
-                    <Text style={styles.label}>{isEnded ? 'Next' : 'Current'} Ayah</Text>
+                <View>
+                    <View style={{ display: 'flex', alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 4 }}>
+                        <MaterialIcons name="chrome-reader-mode" style={{ fontSize: 22 }} />
+
+                        <View style={{ display: 'flex', flexDirection: 'row', gap: 6 }}>
+                            <Text style={styles.label}>{nextSurahName}</Text>
+                            <Text style={styles.label}>({usedVerseKey})</Text>
+                        </View>
+                        
+                    </View>
+
+                    {secondsRead > 0 && !isEnded && (
+                        <View style={styles.minuteText}>
+                            <Text style={{ fontWeight: 700, color: theme.colors.primary, fontSize: 16 }}>
+                                {formatSeconds(secondsRead)}
+                            </Text>
+                            <Text style={{ fontSize: 16, color: '#424242' }}>so far</Text>
+                        </View>
+                    )}
                 </View>
-                <View style={{ display: 'flex', flexDirection: 'row', gap: 6 }}>
-                    <Text>{nextSurahName}</Text>
-                    <Text>({usedVerseKey})</Text>
+                
+                <View>
+                    <Button onPress={onRead} mode="contained">
+                        <Text style={styles.buttonText}>
+                            {!isEnded ? 'Continue' : 'Read Tafsir'}
+                        </Text>
+                    </Button>
                 </View>
             </View>
 
@@ -198,23 +228,6 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
                 fontSize={22}
                 lineHeight={42}
             />
-
-            <View style={styles.ctaWrapper}>
-                {secondsRead > 0 && !isEnded && (
-                    <View style={styles.minuteText}>
-                        <Text style={{ fontWeight: 700, color: theme.colors.primary, fontSize: 15 }}>
-                            {formatSeconds(secondsRead)}
-                        </Text>
-                        <Text style={{ fontSize: 15, color: '#424242' }}>so far</Text>
-                    </View>
-                )}
-
-                <Button onPress={onRead} mode="contained" style={{ flex: 1 }}>
-                    <Text style={styles.buttonText}>
-                        {!isEnded ? 'Continue' : 'Read Tafsir'}
-                    </Text>
-                </Button>
-            </View>
         </View>
     );
 }
@@ -235,7 +248,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        marginBottom: 4,
+        marginBottom: 1,
         justifyContent: 'space-between',
     },
     label: {

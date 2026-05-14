@@ -42,3 +42,30 @@ export interface ActivityDaysQuery {
     first?: number;
     last?: number;
 }
+
+export interface LongestStrike {
+    strike_start: string;
+    strike_end: string;
+    strike_days: number;
+    total_strikes: number;
+}
+
+export interface FailedStrikeDay {
+  failed_date:  string;       // 'YYYY-MM-DD'
+  failure_type: 'below_target' | 'no_activity';
+  seconds_read: number;
+  daily_target: number | null;
+}
+
+export interface FailedStrikeDaysParams {
+  p_user_id: string;
+  p_limit?:  number;
+  p_offset?: number;
+}
+
+export interface FailedStrikeDaysResult {
+  total_failed_days: number;
+  limit:             number;
+  offset:            number;
+  results:           FailedStrikeDay[];
+}

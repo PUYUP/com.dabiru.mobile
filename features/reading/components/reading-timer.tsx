@@ -313,7 +313,7 @@ const ReadingTimer: React.FC<ReadingTimerProps> = ({
 				)}
 
 				<Button onPress={handleToggle} mode={isRunning ? 'contained-tonal' : 'contained'}>
-					{isRunning ? 'Pause' : (seconds > 0 ? 'Continue' : 'Read')}
+					{isRunning ? 'Pause' : (seconds > 0 ? 'Continue' : 'Start')}
 				</Button>
 			</View>
 		</View>
