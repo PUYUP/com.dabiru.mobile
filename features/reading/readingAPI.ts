@@ -1,6 +1,6 @@
 import api from "@/services/apiClient";
 import { supabase } from "@/services/supabase";
-import { CreateReadingSessionPayload, GetLatestSessionQuery } from "./readingTyping";
+import { CreateReadingSessionPayload, GetLatestSessionQuery, GetSessionQuery } from "./readingTyping";
 
 // ─── Retry Helper ────────────────────────────────────────────────────────────
 
@@ -96,6 +96,36 @@ export const supabaseGetLatestEndedSessionAPI = async (
         }
 
         return data[0];
+    });
+};
+
+// get supabase sessions
+export const supabaseGetSessionAPI = async (query: GetSessionQuery) => {
+    const userId = await getAuthenticatedUserId();
+
+    return withRetry(async () => {
+        let querySet = supabase
+            .from("reading_sessions")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("status", query.status);
+        
+        if (query.verseKey) {
+            querySet = querySet.eq('verse_key', query.verseKey);
+        }
+        
+        querySet = querySet
+            .order("created_at", { ascending: false })
+            .range(query.from, query.to);
+
+        const { data, error } = await querySet;
+            
+        if (error) {
+            console.log("Supabase getting sessions error:", error);
+            throw error;
+        }
+
+        return data;
     });
 };
 

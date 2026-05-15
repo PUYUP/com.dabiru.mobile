@@ -1,5 +1,12 @@
 import { createSlice, SerializedError } from "@reduxjs/toolkit";
-import { getAllChapters, supabaseCreateReadingSession, supabaseGetLatestEndedSession, supabaseGetLatestSession } from "./readingThunk";
+import {
+    getAllChapters,
+    supabaseCreateReadingSession,
+    supabaseGetLatestEndedSession,
+    supabaseGetLatestSession,
+    supabaseGetSession,
+    supabaseGetSessions
+} from "./readingThunk";
 
 const initialState = {
     supabaseCreateSession: {
@@ -19,11 +26,21 @@ const initialState = {
         hasFetched: false,
         error: null as SerializedError | null,
     },
-    chapters: {
-        data: [],
+    supabaseSessions: {
+        data: [] as any[],
         loading: false,
         error: null as SerializedError | null,
-    }
+    },
+    supabaseSession: {
+        data: null as null,
+        loading: false,
+        error: null as SerializedError | null,
+    },
+    chapters: {
+        data: [] as any[],
+        loading: false,
+        error: null as SerializedError | null,
+    },
 }
 
 const readingSlice = createSlice({
@@ -94,6 +111,40 @@ const readingSlice = createSlice({
         .addCase(supabaseGetLatestEndedSession.rejected, (state, { error }) => {
             state.supabaseLatestEndedSession.loading = false;
             state.supabaseLatestEndedSession.error = error;
+        })
+
+        // get sessions
+        .addCase(supabaseGetSessions.pending, (state) => {
+            console.log('Supabase get sessions...');
+            state.supabaseSessions.loading = true;
+            state.supabaseSessions.error = null;
+        })
+        .addCase(supabaseGetSessions.fulfilled, (state, { payload }) => {
+            console.log('Supabase get sessions success!');
+            state.supabaseSessions.loading = false;
+            state.supabaseSessions.error = null;
+            state.supabaseSessions.data = payload;
+        })
+        .addCase(supabaseGetSessions.rejected, (state, { error }) => {
+            state.supabaseSessions.loading = false;
+            state.supabaseSessions.error = error;
+        })
+
+        // get session
+        .addCase(supabaseGetSession.pending, (state) => {
+            console.log('Supabase get session...');
+            state.supabaseSession.loading = true;
+            state.supabaseSession.error = null;
+        })
+        .addCase(supabaseGetSession.fulfilled, (state, { payload }) => {
+            console.log('Supabase get session success!');
+            state.supabaseSession.loading = false;
+            state.supabaseSession.error = null;
+            state.supabaseSession.data = payload.length > 0 ? payload[0] : null;
+        })
+        .addCase(supabaseGetSession.rejected, (state, { error }) => {
+            state.supabaseSession.loading = false;
+            state.supabaseSession.error = error;
         })
 
         // get all chapters

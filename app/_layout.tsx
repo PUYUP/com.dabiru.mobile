@@ -9,7 +9,7 @@ import { theme } from '@/constants/theme';
 import { getUserProfile } from '@/features/auth/authThunks';
 import { getConfig } from '@/features/config/configThunks';
 import { getAllChapters } from '@/features/reading/readingThunk';
-import { generateWeeklyGoal } from '@/features/user/userThunks';
+import { createGoal } from '@/features/user/userThunks';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux-hooks';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useQFAutoRefreshToken } from '@/hooks/use-qf-auto-refresh-token';
@@ -90,11 +90,10 @@ function RootNav() {
       if (isNew) {
         console.info("New user detected...");
 
-        // generate default goal for one week
-        dispatch(generateWeeklyGoal({ 
+        // generate default goal
+        dispatch(createGoal({ 
           type: 'QURAN_TIME',
           amount: 900, // in seconds
-          duration: 1,
           category: 'QURAN'
         }) as any);
       }
@@ -134,6 +133,7 @@ function RootNav() {
             <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
             <Stack.Screen name="adjust-goal-modal" options={{ headerShown: false, presentation: 'modal', title: 'Adjust Goal' }} />
             <Stack.Screen name="tafsir-reader" options={{ headerShown: true, headerBackButtonDisplayMode: 'minimal', title: 'Read Tafsir' }} />
+            <Stack.Screen name="history-detail" options={{ headerShown: true, headerBackButtonDisplayMode: 'minimal', title: 'History Detail' }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>

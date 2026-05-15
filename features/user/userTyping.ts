@@ -4,8 +4,14 @@ export type GoalCategory = 'COURSE' | 'QURAN';
 export type GoalPayload = {
     type: GoalType;
     amount: string | number;
-    duration: number; // in days
+    duration?: number; // in days
     category: GoalCategory;
+}
+
+export type GenerateGoalPayload = {
+    type: GoalType;
+    amount: string | number;
+    duration?: number; // in days
 }
 
 export interface GoalInfo {

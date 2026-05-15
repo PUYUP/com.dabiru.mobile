@@ -1,9 +1,25 @@
 import { createSlice, SerializedError } from "@reduxjs/toolkit";
-import { addActivity, createGoal, createReadingSession, getActivityDays, getFailedStrike, getGoal, getLatestSession, getLongestStrike, updateGoal } from "./userThunks";
+import { supabaseCreateReadingSession } from "../reading/readingThunk";
+import {
+    addActivity,
+    createGoal,
+    createReadingSession,
+    getActivityDays,
+    getFailedStrike,
+    getGoal,
+    getLatestSession,
+    getLongestStrike,
+    updateGoal
+} from "./userThunks";
 import { GoalInfo } from "./userTyping";
 
 const initialState = {
     goal: {
+        data: null as GoalInfo | null,
+        loading: false,
+        error: null as SerializedError | null,
+    },
+    updatingGoal: {
         data: null as GoalInfo | null,
         loading: false,
         error: null as SerializedError | null,
@@ -42,20 +58,57 @@ const userSlice = createSlice({
     extraReducers: (builder) => {
         builder
             // create goal
-            .addCase(createGoal.fulfilled, (state, action) => {
-                console.log("Goal created successfully:", action.payload);
+            .addCase(createGoal.fulfilled, (state, { meta, payload }) => {
+                console.log("Goal created successfully:", payload);
+
+                if (state.goal.data) {
+                    state = {
+                        ...state,
+                        goal: {
+                            ...state.goal,
+                            data: {
+                                ...state.goal.data,
+                                dailyTargetSeconds: meta.arg.amount as number,
+                            }
+                        }
+                    }
+                }
             })
 
             // update goal
             .addCase(updateGoal.pending, (state, action) => {
                 console.log('Updating goal...');
+
+                state.updatingGoal.loading = true;
+                state.updatingGoal.error = null;
+
                 const data = action.meta.arg.data;
                 if (state.goal.data) {
                     state.goal.data.dailyTargetSeconds = data.amount as number;
                 }
             })
-            .addCase(updateGoal.fulfilled, (state, action) => {
-                console.log("Goal updated successfully!")
+            .addCase(updateGoal.fulfilled, (state, { meta, payload }) => {
+                console.log("Goal updated successfully!", payload);
+
+                state.updatingGoal.loading = false;
+                state.updatingGoal.error = null;
+
+                if (state.goal.data) {
+                    state = {
+                        ...state,
+                        goal: {
+                            ...state.goal,
+                            data: {
+                                ...state.goal.data,
+                                dailyTargetSeconds: meta.arg.data.amount as number,
+                            }
+                        }
+                    }
+                }
+            })
+            .addCase(updateGoal.rejected, (state, { error }) => {
+                state.updatingGoal.loading = false;
+                state.updatingGoal.error = error;
             })
 
             // getting daily goals
@@ -64,7 +117,7 @@ const userSlice = createSlice({
             })
             .addCase(getGoal.fulfilled, (state, action) => {
                 console.log("Goal fetched successfully:", action.payload);
-                state.goal.data = action.payload;
+                state.goal.data = action.payload as GoalInfo;
                 state.goal.loading = false;
                 state.goal.error = null;
             })
@@ -165,6 +218,23 @@ const userSlice = createSlice({
             .addCase(getFailedStrike.rejected, (state, { error }) => {
                 state.failedStrike.loading = false;
                 state.failedStrike.error = error;
+            })
+
+            .addCase(supabaseCreateReadingSession.fulfilled, (state, { payload }) => {
+                // calculate strike
+                const secondsRead = payload.seconds_read;
+                const dailyTargetSeconds = payload.daily_target_seconds;
+                const strike = secondsRead / dailyTargetSeconds;
+                
+                if (state.longestStrike.data) {
+                    state.longestStrike = {
+                        ...state.longestStrike,
+                        data: {
+                            ...state.longestStrike.data,
+                            total_strikes: Math.round(state.longestStrike.data.total_strikes + strike),
+                        }
+                    }
+                }
             })
     }
 });

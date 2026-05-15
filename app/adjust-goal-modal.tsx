@@ -46,7 +46,6 @@ export default function AdjustGoalModal() {
                     type: 'QURAN_TIME',
                     amount: parseInt(minutes) * 60, // back to seconds
                     category: 'QURAN',
-                    duration: 1,
                 },
                 id: currentGoal.goalId,
             }) as any);

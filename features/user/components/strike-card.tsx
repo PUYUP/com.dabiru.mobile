@@ -10,16 +10,14 @@ import { useAppDispatch, useAppSelector } from '@/hooks/redux-hooks';
 import { generateDays } from '@/utils/days-generator';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { endOfWeek, format, getUnixTime, startOfWeek } from 'date-fns';
-import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
   FlatList,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import Skeleton from "react-native-reanimated-skeleton";
@@ -59,10 +57,11 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface CircularProgressProps {
   current: number;
+  target: number;
   goal: GoalInfo;
 }
 
-function CircularProgress({ current, goal }: CircularProgressProps) {
+function CircularProgress({ current, target, goal }: CircularProgressProps) {
   const theme = useTheme();
 
   const RADIUS = 86;
@@ -78,7 +77,7 @@ function CircularProgress({ current, goal }: CircularProgressProps) {
   const animatedValue = useRef(new Animated.Value(arcLength)).current;
 
   useEffect(() => {
-    const progress = Math.min(current / Number(goal.dailyTargetSeconds), 1);
+    const progress = Math.min(current / Number(target), 1);
     // BUG FIX: strokeDashoffset of 0 = full arc visible, arcLength = empty.
     // Was previously `arcLength - progress * arcLength` which is correct, but
     // the initial Animated.Value was 0 (full progress shown on mount before
@@ -139,8 +138,8 @@ function CircularProgress({ current, goal }: CircularProgressProps) {
       </Svg>
 
       <View style={styles.circleCenter}>
-        <Text style={styles.circleNumber}>{Math.round((goal.secondsRead + (goal.manuallyAddedSeconds ? goal.manuallyAddedSeconds : 0)) / 60)}</Text>
-        <Text style={styles.circleSubtitle}>of {Math.round(goal.dailyTargetSeconds / 60)} {'min'}</Text>
+        <Text style={styles.circleNumber}>{Math.round(current / 60)}</Text>
+        <Text style={styles.circleSubtitle}>of {Math.round(target / 60)} {'min'}</Text>
       </View>
     </View>
   );
@@ -295,8 +294,6 @@ function buildDailyStrikes(): StrikeInfo[] {
 
 export default function StrikeCard() {
   const dispatch = useAppDispatch();
-  const router = useRouter();
-  const theme = useTheme();
   const [strikes, setStrikes] = useState<StrikeInfo[]>(() => buildDailyStrikes());
   const [strikesData, setStrikesData] = useState<any[]>(STREAK_DATA);
   const longestStrike = useAppSelector((state: any) => state.user.longestStrike);
@@ -306,10 +303,6 @@ export default function StrikeCard() {
   const todayDate = format(now, "yyyy-MM-dd");
   const startDate = format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
   const endDate = format(endOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
-
-  const handleAdjust = useCallback(() => {
-    router.push('/adjust-goal-modal');
-  }, [router]);
 
   // Load current goal
   useEffect(() => {
@@ -339,15 +332,25 @@ export default function StrikeCard() {
         return item.date == s.date;
       });
 
-      const manuallyAddedSeconds = activity && activity.manuallyAddedSeconds ? activity.manuallyAddedSeconds : 0;
-      const value = activity && (activity.secondsRead || manuallyAddedSeconds)? 
-        Math.round(((activity.secondsRead + manuallyAddedSeconds) / 60)).toString()
+      if (!activity) {
+        return {
+          ...s,
+          value: '0',
+          isStrikeed: false,
+        }
+      }
+
+      const target = activity.dailyTargetSeconds;
+      const manuallyAddedSeconds = activity.manuallyAddedSeconds ? activity.manuallyAddedSeconds : 0;
+      const current = activity.secondsRead + manuallyAddedSeconds;
+      const value = current && target ? 
+        Math.round((current / target)).toString()
         : '0';
 
       return {
         ...s,
         value: value,
-        isStrikeed: activity ? ((activity.secondsRead + manuallyAddedSeconds) >= activity.dailyTargetSeconds) : false,
+        isStrikeed: activity ? (current >= target) : false,
       };
     });
 
@@ -411,10 +414,9 @@ export default function StrikeCard() {
   }
 
   // calculate progress in percentage
-  const totalSeconds = (goal.data.secondsRead ?? 0) + (goal.data.manuallyAddedSeconds ?? 0);
-  const percentage = goal.data.dailyTargetSeconds 
-    ? Math.round((totalSeconds / goal.data.dailyTargetSeconds) * 100)
-    : 0;
+  const current = goal.data.secondsRead + goal.data.manuallyAddedSeconds;
+  const target = goal.data.dailyTargetSeconds;
+  const percentage = target ? Math.round((current / target) * 100) : 0;
   
   return (
     <React.Fragment>
@@ -423,16 +425,7 @@ export default function StrikeCard() {
           {/* ── Header ── */}
           <View style={styles.header}>
             <MaterialIcons name="checklist" style={{ fontSize: 22 }} />
-            <Text style={[styles.title, { flex: 1, paddingLeft: 8 }]}>Today Goal</Text>
-          
-            <TouchableOpacity
-              style={[styles.actionBtn, { width: 100, justifyContent: 'flex-start', gap: 2 }]}
-              onPress={handleAdjust}
-              activeOpacity={0.7}
-            >
-              <MaterialIcons name="add-task" color={theme.colors.primary} style={styles.actionIcon} />
-              <Text style={[styles.actionText, { color: theme.colors.primary }]}>Adjust</Text>
-            </TouchableOpacity>
+            <Text style={[styles.title, { flex: 1, paddingLeft: 8 }]}>Daily Goal</Text>
           </View>
 
           {/* ── Content ── */}
@@ -441,12 +434,13 @@ export default function StrikeCard() {
               <View style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 32, flexDirection: 'row' }}>
                 <View>
                   <View style={styles.circleWrapper}>
-                    <CircularProgress current={(goal.data.secondsRead + goal.data.manuallyAddedSeconds)} goal={goal.data} />
+                    <CircularProgress current={current} target={target} goal={goal.data} />
                     <Text style={styles.todayLabel}>{percentage + '%'}</Text>
                   </View>
                 </View>
 
-                <View style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 16, paddingTop: 6, gap: 10 }}>
+                {/* ── Strike Info ── */}
+                <View style={{ display: 'flex', marginTop: -34, justifyContent: 'space-between', paddingBottom: 16, paddingTop: 6, gap: 10 }}>
                   {strikesData.map((item: any) => {
                     return (
                       <View key={item.id} style={styles.strikeItem}>
@@ -479,21 +473,6 @@ export default function StrikeCard() {
             </View>
           </View>
         </View>
-
-        {/* ── Strike Info ── */}
-        {/*
-        <View style={styles.infoContainer}>
-          <FlatList
-            scrollEnabled={false}
-            data={STREAK_DATA}
-            keyExtractor={(item) => item.id}
-            numColumns={3}
-            style={styles.infoList}
-            columnWrapperStyle={styles.infoRow}
-            renderItem={({ item }) => <StrikeInfoItem item={item} goal={goal.data} />}
-          />
-        </View>
-        */}
       </View>
     </React.Fragment>
   );
@@ -517,8 +496,8 @@ const styles = StyleSheet.create({
     borderColor: '#dcdcdc',
   },
   cardContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 12,
     alignItems: 'center',
   },
@@ -559,7 +538,7 @@ const styles = StyleSheet.create({
     lineHeight: 44,
   },
   circleSubtitle: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#828fa1',
     marginTop: 2,
   },
@@ -649,8 +628,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     borderWidth: 1,
@@ -693,8 +672,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    padding: 6,
-    paddingVertical: 4,
+    padding: 10,
+    paddingVertical: 6,
     borderWidth: 1,
     borderColor: '#e2e2e2',
     borderRadius: 14,

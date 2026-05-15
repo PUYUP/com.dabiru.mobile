@@ -11,6 +11,7 @@ import { format } from "date-fns/format";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, MD2Colors } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const FONT_SIZE_MIN = 15;
@@ -22,6 +23,15 @@ function LoadingSkeleton() {
     return (
         <View style={{ display: 'flex', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
             <Text>Loading...</Text>
+        </View>
+    );
+}
+
+function Loading() {
+    return (
+        <View style={styles.loading}>
+            <ActivityIndicator animating={true} color={MD2Colors.red800} />
+            <Text>Processing... Please wait</Text>
         </View>
     );
 }
@@ -133,16 +143,18 @@ export default function TafsirReader() {
         if (!chapterNumber || !verseNumber) return;
 
         if (qfLatestSession.data?.chapterNumber != chapterNumber || qfLatestSession.data?.verseNumber != verseNumber) {
+            // initialize qf session
             dispatch(createReadingSession({
                 chapterNumber: parseInt(chapterNumber),
                 verseNumber: parseInt(verseNumber),
             }) as any);
 
+            // initialize sb session
             dispatch(supabaseCreateReadingSession({
                 data: {
                     current_chapter_number: parseInt(chapterNumber),
                     current_verse_number: parseInt(verseNumber),
-                    status: 'active',
+                    status: 'start',
                     seconds_read: 0,
                     daily_target_seconds: dailyTargetSeconds,
                 }
@@ -178,15 +190,17 @@ export default function TafsirReader() {
         if (seconds <= 0) return;
 
         const prevSecondsRead = sbLatestSession.data?.total_read_seconds ?? 0;
+        const rootSessionId = sbLatestSession.data?.root_session_id || sbLatestSession.data?.id;
 
         dispatch(supabaseCreateReadingSession({
             data: {
                 current_chapter_number: parseInt(chapterNumber),
                 current_verse_number: parseInt(verseNumber),
-                status: 'active',
+                status: 'continue',
                 seconds_read: seconds - prevSecondsRead,
                 total_read_seconds: seconds,
                 daily_target_seconds: dailyTargetSeconds,
+                root_session_id: rootSessionId,
             }
         }) as any);
 
@@ -210,6 +224,7 @@ export default function TafsirReader() {
         if (seconds <= 0) return;
 
         const prevSecondsRead = sbLatestSession.data?.total_read_seconds ?? 0;
+        const rootSessionId = sbLatestSession.data?.root_session_id || sbLatestSession.data?.id;
 
         dispatch(supabaseCreateReadingSession({
             data: {
@@ -220,6 +235,7 @@ export default function TafsirReader() {
                 total_read_seconds: seconds,
                 ended_at: new Date().toISOString(),
                 daily_target_seconds: dailyTargetSeconds,
+                root_session_id: rootSessionId,
             },
             purpose: 'finish'
         }) as any);
@@ -227,6 +243,9 @@ export default function TafsirReader() {
 
     return (
         <>
+            {sbCreateSession.loading && (
+                <Loading />
+            )}
             <Stack.Screen
                 options={{
                     headerRight: () => (
@@ -309,4 +328,18 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
         textTransform: 'uppercase',
     },
+    loading: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.85)',
+        zIndex: 99,
+        display: 'flex',
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 16,
+    }
 });

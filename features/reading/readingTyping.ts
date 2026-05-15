@@ -1,6 +1,7 @@
-export type ReadingStatus = 'active' | 'paused' | 'ended';
+export type ReadingStatus =  'start' | 'continue' | 'ended';
 
 export interface CreateReadingSessionPayload {
+    root_session_id?: string;
     user_id?: string; // uuid4 coming from supabase
     ended_at?: string;
     current_chapter_number: number;
@@ -13,4 +14,11 @@ export interface CreateReadingSessionPayload {
 
 export interface GetLatestSessionQuery {
     verse_key: string;
+}
+
+export interface GetSessionQuery {
+    status: ReadingStatus;
+    from: number;
+    to: number;
+    verseKey?: string;
 }

@@ -20,7 +20,7 @@ export const generateWeeklyGoal = createAsyncThunk(
 
 // update goal
 export const updateGoal = createAsyncThunk(
-    'user/updateGoal',
+    'user/updatingGoal',
     async (payload: { data: GoalPayload, id: string }) => {
         return await updateGoalAPI(payload.data, payload.id);
     }

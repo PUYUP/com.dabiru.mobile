@@ -2,7 +2,7 @@ import { MUSHAF_ID } from "@/constants/oauth";
 import api from "@/services/apiClient";
 import { supabase } from "@/services/supabase";
 import { withRetry } from "@/utils/retry-helper";
-import { ActivityDaysQuery, ActivityPayload, FailedStrikeDaysResult, GoalInfo, GoalPayload, LongestStrike } from "./userTyping";
+import { ActivityDaysQuery, ActivityPayload, FailedStrikeDaysResult, GenerateGoalPayload, GoalInfo, GoalPayload, LongestStrike } from "./userTyping";
 
 // ─── Auth Helper ─────────────────────────────────────────────────────────────
 
@@ -34,17 +34,15 @@ export const createGoalAPI = async (payload: GoalPayload): Promise<GoalPayload> 
 };
 
 // generate goal for 1 week
-export const generateWeeklyGoalAPI = async (payload: GoalPayload): Promise<GoalPayload> => {
+export const generateWeeklyGoalAPI = async (payload: GenerateGoalPayload): Promise<GoalPayload> => {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     try {
-        const res = await api.post(
+        const res = await api.get(
             `/auth/v1/goals/estimate?mushafId=${MUSHAF_ID}`,
-            payload,
             {
-                headers: {
-                    "x-timezone": timeZone
-                }
+                headers: { "x-timezone": timeZone },
+                params: payload,
             }
         );
         return res.data;

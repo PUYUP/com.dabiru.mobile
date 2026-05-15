@@ -1,9 +1,13 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, SerializedError } from '@reduxjs/toolkit';
 import { Session, User } from '@supabase/supabase-js';
 import { exchangeToken, getUserProfile, refreshToken, revokeToken, supabaseSignInWithEmail, supabaseSignUpWithEmail } from './authThunks';
 
 const initialState = {
-  user: null,
+  user: {
+    data: null,
+    loading: false,
+    error: null as SerializedError | null,
+  },
   accessToken: null,
   refreshToken: null,
   isAuthenticated: false,
@@ -58,14 +62,21 @@ const authSlice = createSlice({
             })
             
             // get user profile
-            .addCase(getUserProfile.pending, () => {
+            .addCase(getUserProfile.pending, (state) => {
                 console.log("Fetching user profile...");
+                state.user.loading = true;
+                state.user.error = null;
             })
-            .addCase(getUserProfile.fulfilled, (state, action) => {
-                console.log("User profile fetched:", action.payload);
-                state.user = action.payload;
+            .addCase(getUserProfile.fulfilled, (state, { payload }) => {
+                console.log("User profile fetched:", payload);
+                state.user.data = payload;
+                state.user.loading = false;
+                state.user.error = null;
             })
-            .addCase(getUserProfile.rejected, () => initialState)
+            .addCase(getUserProfile.rejected, (state, { error }) => {
+                state.user.loading = false;
+                state.user.error = error;
+            })
             
             // supabase sign-up with email
             .addCase(supabaseSignUpWithEmail.pending, () => {

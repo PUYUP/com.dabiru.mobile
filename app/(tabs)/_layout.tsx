@@ -31,10 +31,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="account"
+        name="settings"
         options={{
-          title: 'Account',
-          tabBarIcon: ({ color }) => <MaterialIcons size={26} name='account-circle' color={color} />,
+          title: 'Settings',
+          tabBarIcon: ({ color }) => <MaterialIcons size={26} name='settings' color={color} />,
         }}
       />
     </Tabs>
