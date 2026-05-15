@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { createGoalAPI, getTafsirsAPI, getUthmaniTajweedWithKeyAPI, getVerseByKeyAPI } from "./tafsirsAPI";
-import { CreateGoalPayload, GetVerseQuery } from "./tafsirsTyping";
+import { createGoalAPI, getTafsirsAPI, getUthmaniTajweedWithKeyAPI, getVerseByKeyAPI, supabaseSummarizeTafsirAPI } from "./tafsirsAPI";
+import { CreateGoalPayload, GetVerseQuery, TafsirSummarizerPayload } from "./tafsirsTyping";
 
 export const getTafsirs = createAsyncThunk(
     'tafsirs/getTafsirs',
@@ -30,5 +30,13 @@ export const getVerseByKey = createAsyncThunk(
     'tafsirs/getVerseByKey',
     async (payload: { verseKey: string, query: GetVerseQuery }) => {
         return await getVerseByKeyAPI(payload.verseKey, payload.query);
+    }
+);
+
+// summarizing
+export const summarizing = createAsyncThunk(
+    'tafsirs/summarizing',
+    async (payload: TafsirSummarizerPayload) => {
+        return await supabaseSummarizeTafsirAPI(payload);
     }
 );

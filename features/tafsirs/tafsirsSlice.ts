@@ -1,5 +1,5 @@
 import { createSlice, SerializedError } from "@reduxjs/toolkit";
-import { createGoal, getTafsirs, getUthmaniTajweedWithKey, getVerseByKey } from "./tafsirsThunk";
+import { createGoal, getTafsirs, getUthmaniTajweedWithKey, getVerseByKey, summarizing } from "./tafsirsThunk";
 import { GoalResponse } from "./tafsirsTyping";
 
 const initialState = {
@@ -18,13 +18,22 @@ const initialState = {
         data: null,
         loading: false,
         error: null as SerializedError | null,
-    }
+    },
+    summary: {
+        data: null as null,
+        loading: false,
+        error: null as SerializedError | null,
+    },
 };
 
 const tafsirsSlice = createSlice({
     name: 'tafsirs',
     initialState,
-    reducers: {},
+    reducers: {
+        resetSummary: (state) => {
+            state.summary = initialState.summary;
+        }
+    },
     extraReducers: (builder) => {
         builder
             // get tafsirs
@@ -88,7 +97,26 @@ const tafsirsSlice = createSlice({
                 state.verse.loading = false;
                 state.verse.error = error;
             })
+
+            // summarizing
+            .addCase(summarizing.pending, (state) => {
+                console.log('Summarizing tafsirs...');
+                state.summary.loading = true;
+                state.summary.error = null;
+            })
+            .addCase(summarizing.fulfilled, (state, { payload }) => {
+                console.log('Summarizing tafsirs success!');
+                state.summary.data = payload;
+                state.summary.loading = false;
+                state.summary.error = null;
+            })
+            .addCase(summarizing.rejected, (state, { error }) => {
+                console.log('Summarizing tafsirs failed:', error);
+                state.summary.loading = false;
+                state.summary.error = error;
+            })
     },
 });
 
+export const { resetSummary } = tafsirsSlice.actions;
 export default tafsirsSlice.reducer;

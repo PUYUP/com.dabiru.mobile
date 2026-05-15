@@ -2,14 +2,21 @@ import { createSlice, SerializedError } from "@reduxjs/toolkit";
 import {
     getAllChapters,
     supabaseCreateReadingSession,
+    supabaseGetChildSessions,
     supabaseGetLatestEndedSession,
     supabaseGetLatestSession,
     supabaseGetSession,
-    supabaseGetSessions
+    supabaseGetSessions,
+    supabaseUpdateReadingSession
 } from "./readingThunk";
 
 const initialState = {
     supabaseCreateSession: {
+        data: null,
+        loading: false,
+        error: null as SerializedError | null,
+    },
+    supabaseUpdateSession: {
         data: null,
         loading: false,
         error: null as SerializedError | null,
@@ -24,6 +31,11 @@ const initialState = {
         data: null,
         loading: false,
         hasFetched: false,
+        error: null as SerializedError | null,
+    },
+    supabaseChildSessions: {
+        data: [] as any[],
+        loading: false,
         error: null as SerializedError | null,
     },
     supabaseSessions: {
@@ -73,6 +85,26 @@ const readingSlice = createSlice({
         .addCase(supabaseCreateReadingSession.rejected, (state, { error }) => {
             state.supabaseCreateSession.loading = false;
             state.supabaseCreateSession.error = error;
+        })
+
+        // update reading session
+        .addCase(supabaseUpdateReadingSession.pending, (state, action) => {
+            console.log('Supabase update reading session...');
+
+            state.supabaseUpdateSession.loading = true;
+            state.supabaseUpdateSession.error = null;
+        })
+        .addCase(supabaseUpdateReadingSession.fulfilled, (state, { payload }) => {
+            console.log('Supabase update reading session success!');
+
+            state.supabaseSession.data = payload;
+            state.supabaseUpdateSession.data = payload;
+            state.supabaseUpdateSession.loading = false;
+            state.supabaseUpdateSession.error = null;
+        })
+        .addCase(supabaseUpdateReadingSession.rejected, (state, { error }) => {
+            state.supabaseUpdateSession.loading = false;
+            state.supabaseUpdateSession.error = error;
         })
 
         // get latest session
@@ -128,6 +160,23 @@ const readingSlice = createSlice({
         .addCase(supabaseGetSessions.rejected, (state, { error }) => {
             state.supabaseSessions.loading = false;
             state.supabaseSessions.error = error;
+        })
+
+        // get child sessions
+        .addCase(supabaseGetChildSessions.pending, (state) => {
+            console.log('Supabase get child sessions...');
+            state.supabaseChildSessions.loading = true;
+            state.supabaseChildSessions.error = null;
+        })
+        .addCase(supabaseGetChildSessions.fulfilled, (state, { payload }) => {
+            console.log('Supabase get child sessions success!');
+            state.supabaseChildSessions.loading = false;
+            state.supabaseChildSessions.error = null;
+            state.supabaseChildSessions.data = payload;
+        })
+        .addCase(supabaseGetChildSessions.rejected, (state, { error }) => {
+            state.supabaseChildSessions.loading = false;
+            state.supabaseChildSessions.error = error;
         })
 
         // get session

@@ -1,12 +1,20 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getAllChaptersAPI, supabaseCreateReadingSessionAPI, supabaseGetLatestEndedSessionAPI, supabaseGetLatestSessionAPI, supabaseGetSessionAPI } from "./readingAPI";
-import { CreateReadingSessionPayload, GetLatestSessionQuery, GetSessionQuery } from "./readingTyping";
+import { getAllChaptersAPI, supabaseCreateReadingSessionAPI, supabaseGetLatestEndedSessionAPI, supabaseGetLatestSessionAPI, supabaseGetSessionAPI, supabaseUpdateReadingSessionAPI } from "./readingAPI";
+import { CreateReadingSessionPayload, GetLatestSessionQuery, GetSessionQuery, UpdateReadingSessionPayload } from "./readingTyping";
 
 // create session
 export const supabaseCreateReadingSession = createAsyncThunk(
   'reading/supabaseCreateReadingSession',
   async (payload: { data: CreateReadingSessionPayload, purpose?: string}) => {
     return await supabaseCreateReadingSessionAPI(payload.data);
+  }
+);
+
+// update session
+export const supabaseUpdateReadingSession = createAsyncThunk(
+  'reading/supabaseUpdateReadingSession',
+  async (payload: { data: UpdateReadingSessionPayload, id: string}) => {
+    return await supabaseUpdateReadingSessionAPI(payload.data, payload.id);
   }
 );
 
@@ -29,6 +37,14 @@ export const supabaseGetLatestEndedSession = createAsyncThunk(
 // get sessions
 export const supabaseGetSessions = createAsyncThunk(
   'reading/supabaseGetSessions',
+  async (payload: GetSessionQuery) => {
+    return await supabaseGetSessionAPI(payload);
+  }
+);
+
+// get child sessions
+export const supabaseGetChildSessions = createAsyncThunk(
+  'reading/supabaseGetChildSessions',
   async (payload: GetSessionQuery) => {
     return await supabaseGetSessionAPI(payload);
   }

@@ -18,3 +18,11 @@ export type GetVerseQuery = {
     tafsirs: string;
     fields: string;
 }
+
+export interface TafsirSummarizerPayload {
+    surah_name: string;
+    chapter_number: number;
+    verse_number: number;
+    tafsir_text: string;
+    language: string;
+}

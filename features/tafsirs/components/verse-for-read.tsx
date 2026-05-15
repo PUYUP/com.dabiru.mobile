@@ -125,7 +125,24 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
             }
         } else {
             // no sb session
-            initialVerse();
+            if (latestSession.data) {
+                const currentVerseKey = `${latestSession.data.chapterNumber}:${latestSession.data.verseNumber}`;
+                const nextVerseKey = getNextVerseKey(currentVerseKey, surahVerseCounts);
+                if (!nextVerseKey) return;
+
+                const surah = chapters.data.find(
+                    (item: any) => item.id === latestSession.data?.chapterNumber
+                );
+
+                if (surah) {
+                    setNextSurahName(surah.name_complex);
+                    setUsedVerseKey(currentVerseKey);
+                }
+
+                dispatch(getUthmaniTajweedWithKey(currentVerseKey) as any);
+            } else {
+                initialVerse();
+            }
         }
     }, [sbLatestSession.loading]);
 

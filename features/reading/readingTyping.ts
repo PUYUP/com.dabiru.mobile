@@ -12,13 +12,17 @@ export interface CreateReadingSessionPayload {
     seconds_read?: number;
 }
 
+export interface UpdateReadingSessionPayload {
+    notes?: string;
+}
+
 export interface GetLatestSessionQuery {
     verse_key: string;
 }
 
 export interface GetSessionQuery {
-    status: ReadingStatus;
     from: number;
     to: number;
+    status?: ReadingStatus;
     verseKey?: string;
 }

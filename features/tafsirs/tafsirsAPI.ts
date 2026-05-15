@@ -1,7 +1,7 @@
 import api from "@/services/apiClient";
 import { supabase } from "@/services/supabase";
 import { withRetry } from "@/utils/retry-helper";
-import { CreateGoalPayload, GetVerseQuery, GoalResponse } from "./tafsirsTyping";
+import { CreateGoalPayload, GetVerseQuery, GoalResponse, TafsirSummarizerPayload } from "./tafsirsTyping";
 
 // ─── Auth Helper ─────────────────────────────────────────────────────────────
 
@@ -117,3 +117,34 @@ export const getVerseByKeyAPI = async (verseKey: string, query: GetVerseQuery) =
         throw error;
     }
 }
+
+// summarizing with AI
+export const supabaseSummarizeTafsirAPI = async (
+    payload: TafsirSummarizerPayload
+) => {
+    return withRetry(async () => {
+        const { data, error } = await supabase.functions.invoke(
+            'gpt-verse-summarizer',
+            {
+                body: {
+                    surah_name: payload.surah_name,
+                    chapter_number: payload.chapter_number,
+                    verse_number: payload.verse_number,
+                    tafsir_text: payload.tafsir_text,
+                    language: payload.language,
+                },
+            }
+        );
+
+        if (error) {
+            console.log(
+                'Supabase summarize tafsir error:',
+                error
+            );
+
+            throw error;
+        }
+
+        return data;
+    });
+};
