@@ -1,12 +1,13 @@
 import VerseForRead from '@/features/tafsirs/components/verse-for-read';
 import StrikeCard from '@/features/user/components/strike-card';
 import { useAppSelector } from '@/hooks/redux-hooks';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import Skeleton from "react-native-reanimated-skeleton";
+import Skeleton from 'react-native-reanimated-skeleton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Replace with your actual user data source
-const GREETING_HOUR = new Date().getHours();
+const EMERALD = '#1B6B4A';
+const GOLD = '#258c91';
 
 function getGreeting(hour: number): string {
   if (hour < 12) return 'Good Morning';
@@ -20,53 +21,90 @@ function getGreetingEmoji(hour: number): string {
   return '🌙';
 }
 
-function ProfileHeader() {
-  const user = useAppSelector((state: any) => state.auth.user);
-  if (!user.data) return;
+// ─── Skeleton ────────────────────────────────────────────────
+function ProfileHeaderSkeleton() {
+  return (
+    <View style={styles.profileHeader}>
+      <View style={styles.profileLeft}>
+        <Skeleton
+          isLoading
+          containerStyle={styles.skeletonGreeting}
+          layout={[{ key: 'greeting', width: 100, height: 13 }]}
+        />
+        <Skeleton
+          isLoading
+          containerStyle={styles.skeletonName}
+          layout={[{ key: 'name', width: 200, height: 22 }]}
+        />
+      </View>
+
+      <Skeleton
+        isLoading
+        containerStyle={styles.skeletonAvatar}
+        layout={[{ key: 'avatar', width: 44, height: 44, borderRadius: 22 }]}
+      />
+    </View>
+  );
+}
+
+// ─── Content ─────────────────────────────────────────────────
+interface ProfileHeaderContentProps {
+  firstName: string;
+  lastName: string;
+  username: string;
+}
+
+function ProfileHeaderContent({ firstName, lastName, username }: ProfileHeaderContentProps) {
+  // Computed once per render, not at module load time
+  const hour = useMemo(() => new Date().getHours(), []);
 
   return (
     <View style={styles.profileHeader}>
       <View style={styles.profileLeft}>
         <Text style={styles.greeting}>
-          {getGreeting(GREETING_HOUR)} {getGreetingEmoji(GREETING_HOUR)}
+          {getGreeting(hour)} {getGreetingEmoji(hour)}
         </Text>
-
-        {user.loading 
-          ? (
-            <Skeleton
-              containerStyle={{ flex: 1, width: 300, marginTop: 4 }}
-              isLoading={true}
-              layout={[
-                { key: "name", width: 220, height: 16 },
-              ]}
-            />
-          ) : (
-            <Text style={styles.userName}>{user.data.firstName} {user.data.lastName}</Text>
-          )
-        }
+        <Text style={styles.userName}>
+          {firstName} {lastName}
+        </Text>
       </View>
-      
-      {user.loading 
-        ? (
-          <Skeleton
-            containerStyle={{ flex: 1, width: 40, height: 40 }}
-            isLoading={true}
-            layout={[
-              { key: "avatar", width: 40, height: 40, borderRadius: 40 },
-            ]}
-          />
-        ) : (
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarInitial}>
-              {user.data.username.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-        )
-      }
+
+      <View style={styles.avatarCircle}>
+        <Text style={styles.avatarInitial}>
+          {username.charAt(0).toUpperCase()}
+        </Text>
+      </View>
     </View>
   );
 }
 
+// ─── Orchestrator ─────────────────────────────────────────────
+function ProfileHeader() {
+  const { loading, data } = useAppSelector((state: any) => state.auth.user);
+
+  // State 1: initial load (data belum ada sama sekali)
+  if (loading && !data) return <ProfileHeaderSkeleton />;
+
+  // State 2: data tidak tersedia & tidak sedang loading (error / unauthenticated)
+  if (!data) return null;
+
+  // State 3: data tersedia, sedang di-refresh → tampilkan konten + overlay skeleton tipis
+  // (opsional: bisa juga cukup return content saja tanpa skeleton refresh)
+  return (
+    <>
+      {loading && <ProfileHeaderSkeleton />}
+      {!loading && (
+        <ProfileHeaderContent
+          firstName={data.firstName}
+          lastName={data.lastName}
+          username={data.username}
+        />
+      )}
+    </>
+  );
+}
+
+// ─── Screen ──────────────────────────────────────────────────
 export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -75,21 +113,17 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Profile Header */}
         <View style={styles.section}>
           <ProfileHeader />
         </View>
 
-        {/* Divider */}
         <View style={styles.divider} />
 
-        {/* Strike Card */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>YOUR STREAK</Text>
           <StrikeCard />
         </View>
 
-        {/* Verse for Read */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>CONTINUE READING</Text>
           <VerseForRead />
@@ -99,9 +133,7 @@ export default function HomeScreen() {
   );
 }
 
-const EMERALD = '#1B6B4A';
-const GOLD = '#258c91';
-
+// ─── Styles ──────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -111,14 +143,13 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
 
-  /* Profile Header */
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   profileLeft: {
-    gap: 2,
+    gap: 4,
   },
   greeting: {
     fontSize: 13,
@@ -146,7 +177,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  /* Layout */
+  // Skeleton containers — ukuran eksplisit, tanpa flex: 1 agar tidak melar
+  skeletonGreeting: {
+    width: 100,
+    height: 13,
+  },
+  skeletonName: {
+    width: 200,
+    height: 22,
+    marginTop: 4,
+  },
+  skeletonAvatar: {
+    width: 44,
+    height: 44,
+  },
+
   section: {
     paddingHorizontal: 20,
     paddingTop: 20,

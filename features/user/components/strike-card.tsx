@@ -64,8 +64,8 @@ interface CircularProgressProps {
 function CircularProgress({ current, target, goal }: CircularProgressProps) {
   const theme = useTheme();
 
-  const RADIUS = 86;
-  const STROKE = 16;
+  const RADIUS = 78;
+  const STROKE = 12;
   const normalizedRadius = RADIUS - STROKE / 2;
   const circumference = 2 * Math.PI * normalizedRadius;
 
@@ -445,7 +445,7 @@ export default function StrikeCard() {
           {/* ── Content ── */}
           <View style={styles.cardContent}>
             <View style={styles.contentRow}>
-              <View style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 32, flexDirection: 'row' }}>
+              <View style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 16, flexDirection: 'row' }}>
                 <View>
                   <View style={styles.circleWrapper}>
                     <CircularProgress current={currentSeconds} target={currentTarget} goal={goal.data} />
@@ -454,7 +454,7 @@ export default function StrikeCard() {
                 </View>
 
                 {/* ── Strike Info ── */}
-                <View style={{ display: 'flex', marginTop: -34, justifyContent: 'space-between', paddingBottom: 16, paddingTop: 6, gap: 10 }}>
+                <View style={{ display: 'flex', marginTop: -46, justifyContent: 'space-between', paddingBottom: 16, paddingTop: 6, gap: 14 }}>
                   {strikesData.map((item: any) => {
                     return (
                       <View key={item.id} style={styles.strikeItem}>
@@ -615,8 +615,8 @@ const styles = StyleSheet.create({
     color: '#1A1A2E',
   },
   dayDot: {
-    width: 38,
-    height: 38,
+    width: 34,
+    height: 34,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',

@@ -24,9 +24,9 @@ type LoadingStep = 'session' | 'sb-session' | 'verse' | 'done';
 
 function LoadingSkeleton({ step }: { step: LoadingStep }) {
     const message: Record<LoadingStep, string> = {
-        'session': 'Memuat sesi...',
-        'sb-session': 'Memeriksa progres...',
-        'verse': 'Memuat ayat...',
+        'session': 'Loading session...',
+        'sb-session': 'Progress checking...',
+        'verse': 'Loading verse...',
         'done': '',
     };
 
@@ -243,7 +243,7 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
 
             <VerseRenderer
                 verseText={uthmaniTajweed.data.text_uthmani_tajweed}
-                fontSize={22}
+                fontSize={24}
                 lineHeight={42}
             />
         </View>

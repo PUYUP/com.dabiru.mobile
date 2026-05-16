@@ -2,7 +2,7 @@ import { makeRedirectUri, useAuthRequest } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import * as React from "react";
 
-import { QF_APP_ID, QF_CLIENT_ID, QF_USE_PRELIVE } from "@/constants/oauth";
+import { QF_CLIENT_ID, QF_USE_PRELIVE } from "@/constants/oauth";
 import { exchangeToken, getUserProfile, revokeToken, supabaseSignOut, supabaseSignUpWithEmail } from "@/features/auth/authThunks";
 import { getConfig } from "@/features/config/configThunks";
 import { useAppDispatch } from '@/hooks/redux-hooks';
@@ -22,7 +22,10 @@ const discovery = {
 
 export function useQFAuth() {
   const dispatch = useAppDispatch();
-  const redirectURI = makeRedirectUri({ scheme: QF_APP_ID });
+  const redirectURI = makeRedirectUri({ 
+    scheme: 'comdabirutafsir',
+    path: '(onboarding)/choose-language',
+  });
 
   const [request, response, promptAsync] = useAuthRequest(
     {
