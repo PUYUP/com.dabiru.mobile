@@ -180,7 +180,7 @@ export default function HistoryDetailScreen() {
     const chartData = validChildren.reverse().map((s: any) => parseFloat((s.total_read_seconds / 60).toFixed(1)));
 
     // Session details: newest first, but keep original 1-based numbering
-    const reversedChildren = [...validChildren];
+    const reversedChildren = [...validChildren].reverse();
 
     return (
         <SafeAreaView style={styles.safe} edges={["bottom"]}>
