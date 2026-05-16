@@ -175,8 +175,12 @@ export default function HistoryDetailScreen() {
             ? Math.max(...validChildren.map((s: any) => s.total_read_seconds))
             : 0;
 
+    // Chart: oldest → newest (left to right), label with original 1-based index
     const chartLabels = validChildren.map((_: any, i: number) => `${i + 1}`);
-    const chartData = validChildren.map((s: any) => parseFloat((s.total_read_seconds / 60).toFixed(1)));
+    const chartData = validChildren.reverse().map((s: any) => parseFloat((s.total_read_seconds / 60).toFixed(1)));
+
+    // Session details: newest first, but keep original 1-based numbering
+    const reversedChildren = [...validChildren];
 
     return (
         <SafeAreaView style={styles.safe} edges={["bottom"]}>
@@ -261,7 +265,7 @@ export default function HistoryDetailScreen() {
                                             stroke: "#f0f0f0",
                                         },
                                     }}
-                                    style={{ borderRadius: 8 }}
+                                    style={{ borderRadius: 8, marginLeft: -18 }}
                                     showValuesOnTopOfBars
                                     fromZero
                                     withInnerLines
@@ -311,7 +315,9 @@ export default function HistoryDetailScreen() {
                             <Text style={styles.cardTitle}>Session details</Text>
                         </View>
                         <View>
-                            {validChildren.map((item: any, index: number) => {
+                            {reversedChildren.map((item: any, displayIndex: number) => {
+                                // Original 1-based number (newest = sessionCount, oldest = 1)
+                                const originalNumber = sessionCount - displayIndex;
                                 const pct =
                                     longestSeconds > 0
                                         ? item.total_read_seconds / longestSeconds
@@ -321,11 +327,11 @@ export default function HistoryDetailScreen() {
                                         key={item.id}
                                         style={[
                                             styles.sessionRow,
-                                            index < validChildren.length - 1 && styles.sessionRowBorder,
+                                            displayIndex < reversedChildren.length - 1 && styles.sessionRowBorder,
                                         ]}
                                     >
                                         <View style={styles.sessionNum}>
-                                            <Text style={styles.sessionNumText}>{index + 1}</Text>
+                                            <Text style={styles.sessionNumText}>{originalNumber}</Text>
                                         </View>
                                         <View style={styles.sessionInfo}>
                                             <Text style={styles.sessionDuration}>

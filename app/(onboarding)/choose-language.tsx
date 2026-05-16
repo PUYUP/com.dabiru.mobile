@@ -165,7 +165,7 @@ export default function ChooseLanguageScreen() {
 
         dispatch(bulkUpdateConfig({
             language: { language: selectedConfig.language.iso_code },
-            tafsirs: { selectedTafsirs: [selectedConfig.tafsir?.slug] },
+            tafsirs: { selectedTafsirs: [selectedConfig.tafsir?.id] },
             translations: { selectedTranslations: [selectedConfig.translation?.id] },
         }) as any);
 

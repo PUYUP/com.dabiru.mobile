@@ -102,10 +102,11 @@ export const getUthmaniTajweedWithKeyAPI = async (verseKey: string) => {
 export const getVerseByKeyAPI = async (verseKey: string, query: GetVerseQuery) => {
     const q = {
         language: query.language,
-        tafsirs: 169,
+        tafsirs: query.tafsirs ? query.tafsirs : '169',
         tafsir_fields: 'chapter_id,verse_key',
         fields: query.fields,
-        words: false,
+        words: true,
+        word_fields: 'code_v2',
         translations: query.translations,
     }
 

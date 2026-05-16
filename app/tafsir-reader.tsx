@@ -144,7 +144,7 @@ export default function TafsirReader() {
             verseKey: verseKey as string,
             query: {
                 language: preferences.language.language,
-                tafsirs: preferences.tafsirs.selectedTafsirs[0],
+                tafsirs: preferences.tafsirs.selectedTafsirs.join(','),
                 translations: preferences.translations.selectedTranslations[0],
                 fields: 'text_uthmani_tajweed,chapter_id,verse_key',
             },
