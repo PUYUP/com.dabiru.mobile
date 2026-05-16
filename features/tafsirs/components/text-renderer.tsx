@@ -22,6 +22,8 @@ interface Props {
     htmlText: string;
     italic?: boolean;
     fontSize?: number;
+    /** Callback fired when the user selects text (Android only via onSelectionChange) */
+    onTextSelected?: (selectedText: string) => void;
 }
 
 const tajweedModel = HTMLElementModel.fromCustomModel({
@@ -60,7 +62,12 @@ const renderers: CustomTagRendererRecord = {
     },
 };
 
-export default function TextRenderer({ htmlText, italic = false, fontSize = 18 }: Props) {
+export default function TextRenderer({
+    htmlText,
+    italic = false,
+    fontSize = 18,
+    onTextSelected,
+}: Props) {
     const { width } = useWindowDimensions();
 
     const [fontsLoaded] = useFonts({
@@ -102,6 +109,27 @@ export default function TextRenderer({ htmlText, italic = false, fontSize = 18 }
                     'EBGaramond_800ExtraBold',
                     'EBGaramond_800ExtraBold_Italic',
                 ]}
+                // ─── Text selection (iOS & Android) ───────────────────────────
+                // react-native-render-html passes renderersProps down to every
+                // Text node it creates.  Setting `selectable: true` here makes
+                // ALL text nodes selectable, which gives native iOS magnifier /
+                // copy-menu and Android selection handles out of the box.
+                renderersProps={{
+                    // The key "body" targets the root wrapper; individual leaf
+                    // Text nodes honour the selectable flag via the library's
+                    // internal defaultTextProps spreading.
+                    body: {
+                        selectable: true,
+                    },
+                }}
+                // defaultTextProps is the correct API for setting props on every
+                // Text leaf rendered by the library (works on both platforms).
+                defaultTextProps={{
+                    selectable: true,
+                    // Android: suppress the default long-press context menu that
+                    // only shows "Select All" – the native handles already appear.
+                    suppressHighlighting: false,
+                }}
                 baseStyle={{
                     textAlign: 'left',
                     writingDirection: 'ltr',
