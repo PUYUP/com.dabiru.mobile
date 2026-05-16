@@ -436,17 +436,17 @@ export default function StrikeCard() {
     <React.Fragment>
       <View style={styles.container}>
         <View style={styles.card}>
-          {/* ── Header ── */}
-          <View style={styles.header}>
-            <MaterialIcons name="checklist" style={{ fontSize: 22 }} />
-            <Text style={[styles.title, { flex: 1, paddingLeft: 8 }]}>Daily Goal</Text>
-          </View>
-
           {/* ── Content ── */}
           <View style={styles.cardContent}>
             <View style={styles.contentRow}>
               <View style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 16, flexDirection: 'row' }}>
                 <View>
+                  {/* ── Header ── */}
+          <View style={styles.header}>
+            <MaterialIcons name="checklist" style={{ fontSize: 22 }} />
+            <Text style={[styles.title, { flex: 1, paddingLeft: 8 }]}>Daily Goal</Text>
+          </View>
+
                   <View style={styles.circleWrapper}>
                     <CircularProgress current={currentSeconds} target={currentTarget} goal={goal.data} />
                     <Text style={styles.todayLabel}>{percentage + '%'}</Text>
@@ -454,7 +454,7 @@ export default function StrikeCard() {
                 </View>
 
                 {/* ── Strike Info ── */}
-                <View style={{ display: 'flex', marginTop: -46, justifyContent: 'space-between', paddingBottom: 16, paddingTop: 6, gap: 14 }}>
+                <View style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 12, gap: 14 }}>
                   {strikesData.map((item: any) => {
                     return (
                       <View key={item.id} style={styles.strikeItem}>
@@ -524,12 +524,10 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    width: '100%',
     justifyContent: 'space-between',
     alignItems: 'center',
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    marginBottom: 16,
   },
   title: {
     fontSize: 18,
@@ -600,6 +598,9 @@ const styles = StyleSheet.create({
   },
   dotGridRow: {
     gap: 8,
+    justifyContent: 'space-between',
+    display: 'flex',
+    width: '100%',
   },
 
   // Day dots
