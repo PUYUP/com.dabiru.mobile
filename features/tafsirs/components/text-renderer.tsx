@@ -1,3 +1,16 @@
+import {
+    EBGaramond_400Regular,
+    EBGaramond_400Regular_Italic,
+    EBGaramond_500Medium,
+    EBGaramond_500Medium_Italic,
+    EBGaramond_600SemiBold,
+    EBGaramond_600SemiBold_Italic,
+    EBGaramond_700Bold,
+    EBGaramond_700Bold_Italic,
+    EBGaramond_800ExtraBold,
+    EBGaramond_800ExtraBold_Italic,
+    useFonts,
+} from '@expo-google-fonts/eb-garamond';
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import RenderHtml, {
     CustomTagRendererRecord,
@@ -49,7 +62,25 @@ const renderers: CustomTagRendererRecord = {
 
 export default function TextRenderer({ htmlText, italic = false, fontSize = 18 }: Props) {
     const { width } = useWindowDimensions();
-    if (!htmlText) return null;
+
+    const [fontsLoaded] = useFonts({
+        EBGaramond_400Regular,
+        EBGaramond_400Regular_Italic,
+        EBGaramond_500Medium,
+        EBGaramond_500Medium_Italic,
+        EBGaramond_600SemiBold,
+        EBGaramond_600SemiBold_Italic,
+        EBGaramond_700Bold,
+        EBGaramond_700Bold_Italic,
+        EBGaramond_800ExtraBold,
+        EBGaramond_800ExtraBold_Italic,
+    });
+
+    if (!htmlText || !fontsLoaded) return null;
+
+    const fontFamily = italic
+        ? 'EBGaramond_400Regular_Italic'
+        : 'EBGaramond_400Regular';
 
     return (
         <View style={styles.card}>
@@ -59,21 +90,50 @@ export default function TextRenderer({ htmlText, italic = false, fontSize = 18 }
                 customHTMLElementModels={customHTMLElementModels}
                 renderers={renderers}
                 ignoredDomTags={['sup']}
+                systemFonts={[
+                    'EBGaramond_400Regular',
+                    'EBGaramond_400Regular_Italic',
+                    'EBGaramond_500Medium',
+                    'EBGaramond_500Medium_Italic',
+                    'EBGaramond_600SemiBold',
+                    'EBGaramond_600SemiBold_Italic',
+                    'EBGaramond_700Bold',
+                    'EBGaramond_700Bold_Italic',
+                    'EBGaramond_800ExtraBold',
+                    'EBGaramond_800ExtraBold_Italic',
+                ]}
                 baseStyle={{
                     textAlign: 'left',
                     writingDirection: 'ltr',
                     fontSize,
                     lineHeight: fontSize * 1.65,
                     fontStyle: italic ? 'italic' : 'normal',
-                    fontFamily: italic ? 'Georgia' : undefined,
+                    fontFamily,
                 }}
                 tagsStyles={{
                     h2: {
                         marginBottom: 16,
-                        fontWeight: 600,
+                        fontWeight: '600',
+                        fontFamily: 'EBGaramond_600SemiBold',
+                    },
+                    h3: {
+                        marginBottom: 12,
+                        fontWeight: '500',
+                        fontFamily: 'EBGaramond_500Medium',
                     },
                     p: {
                         marginBottom: 16,
+                        fontFamily,
+                    },
+                    strong: {
+                        fontFamily: italic
+                            ? 'EBGaramond_700Bold_Italic'
+                            : 'EBGaramond_700Bold',
+                        fontWeight: '700',
+                    },
+                    em: {
+                        fontFamily: 'EBGaramond_400Regular_Italic',
+                        fontStyle: 'italic',
                     },
                     sup: {
                         fontSize: fontSize * 0.7,

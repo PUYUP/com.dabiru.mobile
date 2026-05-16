@@ -19,9 +19,9 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 const PRIMARY = "#258c91";
 const PRIMARY_LIGHT = "#e8f5f5";
 
-const FONT_SIZE_MIN = 15;
+const FONT_SIZE_MIN = 18;
 const FONT_SIZE_MAX = 32;
-const FONT_SIZE_DEFAULT = 17;
+const FONT_SIZE_DEFAULT = 20;
 const FONT_SIZE_STEP = 2;
 
 function LoadingSkeleton() {
