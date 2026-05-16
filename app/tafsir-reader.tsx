@@ -5,8 +5,9 @@ import { supabaseCreateReadingSession, supabaseGetSessions } from "@/features/re
 import { GetSessionQuery } from "@/features/reading/readingTyping";
 import TextRenderer from "@/features/tafsirs/components/text-renderer";
 import VerseRenderer from "@/features/tafsirs/components/verse-renderer";
+import { resetVerse } from "@/features/tafsirs/tafsirsSlice";
 import { getVerseByKey } from "@/features/tafsirs/tafsirsThunk";
-import { addActivity, createReadingSession, getLatestSession } from "@/features/user/userThunks";
+import { addActivity, createReadingSession, getGoal, getLatestSession } from "@/features/user/userThunks";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
 import { format } from "date-fns/format";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -132,6 +133,9 @@ export default function TafsirReader() {
     useEffect(() => {
         if (!chapterNumber || !verseNumber) return;
 
+        // reset verse
+        dispatch(resetVerse());
+
         if (source !== 'verse-for-read') {
             dispatch(getLatestSession() as any);
         }
@@ -170,23 +174,27 @@ export default function TafsirReader() {
     }, [qfLatestSession.loading, sbLatestSession.loading]);
 
     useEffect(() => {
-        if (sbCreateSession.data && sbCreateSession.data.status == 'ended') {
-            const query: GetSessionQuery = {
-                from: 0,
-                to: 50,
-                status: 'ended',
-              };
+        if (sbCreateSession.data) {
+            if (sbCreateSession.data.status == 'ended') {
+                const query: GetSessionQuery = {
+                    from: 0,
+                    to: 50,
+                    status: 'ended',
+                };
 
-            dispatch(resetCreateSession());
-            dispatch(supabaseGetSessions(query) as any);
+                dispatch(resetCreateSession());
+                dispatch(supabaseGetSessions(query) as any);
 
-            router.replace({
-                pathname: '/history-detail',
-                params: {
-                    id: sbCreateSession.data.id,
-                    verseKey: sbCreateSession.data.verse_key,
-                },
-            });
+                router.replace({
+                    pathname: '/history-detail',
+                    params: {
+                        id: sbCreateSession.data.id,
+                        verseKey: sbCreateSession.data.verse_key,
+                    },
+                });
+            }
+
+            dispatch(getGoal() as any);
         }
     }, [sbCreateSession.data]);
 
@@ -227,7 +235,7 @@ export default function TafsirReader() {
 
         dispatch(
             addActivity({
-                seconds,
+                seconds: seconds - prevSecondsRead,
                 mushafId: MUSHAF_ID,
                 ranges: [`${verseKey}-${verseKey}`],
                 type: 'QURAN' as any,

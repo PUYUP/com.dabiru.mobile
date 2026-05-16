@@ -1,4 +1,4 @@
-import { supabaseGetLatestSession } from "@/features/reading/readingThunk";
+import { getAllChapters, supabaseGetLatestSession } from "@/features/reading/readingThunk";
 import { getUthmaniTajweedWithKey } from "@/features/tafsirs/tafsirsThunk";
 import { getLatestSession } from "@/features/user/userThunks";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
@@ -70,6 +70,7 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
     // ─── Step 1: Fetch QF latest session ─────────────────────────────────────
     useEffect(() => {
         dispatch(getLatestSession() as any);
+        dispatch(getAllChapters() as any);
     }, []);
 
     // ─── Step 2: Fetch Supabase latest session berdasarkan QF verse key ───────

@@ -304,6 +304,11 @@ export default function StrikeCard() {
   const startDate = format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
   const endDate = format(endOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
 
+  // progress
+  const [currentSeconds, setCurrentSeconds] = useState<number>(0);
+  const [currentTarget, setCurrentTarget] = useState<number>(0);
+  const [percentage, setPercentage] = useState<number>(0);
+
   // Load current goal
   useEffect(() => {
     const query: ActivityDaysQuery = {
@@ -320,7 +325,20 @@ export default function StrikeCard() {
   }, []);
 
   const goal = useAppSelector((state: any) => state.user.goal);
+  const goalLoading = useAppSelector((state: any) => state.user.goal.loading);
+  const goalData = useAppSelector((state: any) => state.user.goal.data);
   const activityDays = useAppSelector((state: any) => state.user.activityDays);
+
+  useEffect(() => {
+    if (!goalData) return;
+
+    const target = goalData.dailyTargetSeconds;
+    const current = goalData.secondsRead + goalData.manuallyAddedSeconds;
+
+    setCurrentSeconds(current);
+    setCurrentTarget(target);
+    setPercentage(target ? Math.round((current / target) * 100) : 0);
+  }, [goalData?.dailyTargetSeconds, goalData?.secondsRead, goalData?.manuallyAddedSeconds]);
 
   useEffect(() => {
     if (activityDays.loading) return;
@@ -343,8 +361,9 @@ export default function StrikeCard() {
       const target = activity.dailyTargetSeconds;
       const manuallyAddedSeconds = activity.manuallyAddedSeconds ? activity.manuallyAddedSeconds : 0;
       const current = activity.secondsRead + manuallyAddedSeconds;
-      const value = current && target ? 
-        Math.round((current / target)).toString()
+
+      const value = (current && target) && (current > target) ? 
+        Math.floor((current / target)).toString()
         : '0';
 
       return {
@@ -413,11 +432,6 @@ export default function StrikeCard() {
     return <LoadingSkeleton />;
   }
 
-  // calculate progress in percentage
-  const current = goal.data.secondsRead + goal.data.manuallyAddedSeconds;
-  const target = goal.data.dailyTargetSeconds;
-  const percentage = target ? Math.round((current / target) * 100) : 0;
-  
   return (
     <React.Fragment>
       <View style={styles.container}>
@@ -434,7 +448,7 @@ export default function StrikeCard() {
               <View style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 32, flexDirection: 'row' }}>
                 <View>
                   <View style={styles.circleWrapper}>
-                    <CircularProgress current={current} target={target} goal={goal.data} />
+                    <CircularProgress current={currentSeconds} target={currentTarget} goal={goal.data} />
                     <Text style={styles.todayLabel}>{percentage + '%'}</Text>
                   </View>
                 </View>

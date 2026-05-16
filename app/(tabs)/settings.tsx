@@ -91,19 +91,24 @@ export default function TabTwoScreen() {
                 <Text>Loading profile...</Text>
               </View>
             )
-            : (
-              <View style={styles.profileWrapper}>
-                <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Image src={user.data.avatarUrls.large} style={styles.avatar} />
-                  <View>
-                    <Text style={styles.name}>{user.data.firstName} {user.data.lastName}</Text>
-                    <Text style={styles.userName}>@{user.data.username}</Text>
+            : user.data ? (
+                <View style={styles.profileWrapper}>
+                  <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <Image src={user.data.avatarUrls.large} style={styles.avatar} />
+                    <View>
+                      <Text style={styles.name}>{user.data.firstName} {user.data.lastName}</Text>
+                      <Text style={styles.userName}>@{user.data.username}</Text>
+                    </View>
                   </View>
-                </View>
 
-                <Button mode="contained" onPress={logout}>
-                  Logout
-                </Button>
+                  <Button mode="contained" onPress={logout}>
+                    Logout
+                  </Button>
+                </View>
+              )
+            : (
+              <View style={{ marginBottom: 38 }}>
+                <Text>Profile not found.</Text>
               </View>
             )
           }

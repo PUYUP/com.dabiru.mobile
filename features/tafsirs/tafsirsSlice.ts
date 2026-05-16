@@ -32,6 +32,9 @@ const tafsirsSlice = createSlice({
     reducers: {
         resetSummary: (state) => {
             state.summary = initialState.summary;
+        },
+        resetVerse: (state) => {
+            state.verse = initialState.verse;
         }
     },
     extraReducers: (builder) => {
@@ -118,5 +121,5 @@ const tafsirsSlice = createSlice({
     },
 });
 
-export const { resetSummary } = tafsirsSlice.actions;
+export const { resetSummary, resetVerse } = tafsirsSlice.actions;
 export default tafsirsSlice.reducer;

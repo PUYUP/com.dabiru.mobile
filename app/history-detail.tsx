@@ -188,9 +188,12 @@ export default function HistoryDetailScreen() {
                 {/* ── Hero ── */}
                 <View style={styles.hero}>
                     <Text style={styles.heroTitle}>{surah?.name_simple ?? "—"}</Text>
-                    <Text style={styles.heroSub}>
-                        Verse {session.data.current_verse_number} &middot; Session completed
-                    </Text>
+                    <View style={styles.heroSubRow}>
+                        <View style={styles.verseBadge}>
+                            <Text style={styles.verseBadgeText}>Verse {session.data.current_verse_number}</Text>
+                        </View>
+                        <Text style={styles.heroSub}>Session completed</Text>
+                    </View>
 
                     <View style={styles.statsRow}>
                         <View style={styles.statCard}>
@@ -204,6 +207,24 @@ export default function HistoryDetailScreen() {
                         <View style={styles.statCard}>
                             <Text style={styles.statVal}>{formatSeconds(avgSeconds)}</Text>
                             <Text style={styles.statLabel}>Average</Text>
+                        </View>
+                    </View>
+
+                    {/* ── Stat row 2 ── */}
+                    <View style={[styles.statsRow, { marginTop: 10 }]}>
+                        <View style={styles.statCard}>
+                            <Text style={styles.statVal}>{formatSeconds(longestSeconds)}</Text>
+                            <Text style={styles.statLabel}>Longest session</Text>
+                        </View>
+                        <View style={styles.statCard}>
+                            <Text style={styles.statVal}>
+                                {sessionCount > 0
+                                    ? formatSeconds(
+                                        Math.min(...validChildren.map((s: any) => s.total_read_seconds))
+                                    )
+                                    : "—"}
+                            </Text>
+                            <Text style={styles.statLabel}>Shortest session</Text>
                         </View>
                     </View>
                 </View>
@@ -388,10 +409,28 @@ const styles = StyleSheet.create({
         color: "#fff",
         marginBottom: 2,
     },
+    heroSubRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        marginBottom: 20,
+    },
+    verseBadge: {
+        backgroundColor: "rgba(255,255,255,0.25)",
+        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.4)",
+    },
+    verseBadgeText: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "#fff",
+    },
     heroSub: {
         fontSize: 14,
-        color: "rgba(255,255,255,0.75)",
-        marginBottom: 20,
+        color: "rgba(255,255,255,0.65)",
     },
     statsRow: {
         flexDirection: "row",

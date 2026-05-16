@@ -235,6 +235,20 @@ const userSlice = createSlice({
                         }
                     }
                 }
+
+                // update goal progress
+                if (state.goal.data) {
+                    state = {
+                        ...state,
+                        goal: {
+                            ...state.goal,
+                            data: {
+                                ...state.goal.data,
+                                secondsRead: (state.goal.data.secondsRead + state.goal.data.manuallyAddedSeconds) + payload.seconds_read,
+                            }
+                        }
+                    }
+                }
             })
     }
 });
