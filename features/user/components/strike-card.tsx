@@ -443,10 +443,10 @@ export default function StrikeCard() {
               <View style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 16, flexDirection: 'row' }}>
                 <View>
                   {/* ── Header ── */}
-          <View style={styles.header}>
-            <MaterialIcons name="checklist" style={{ fontSize: 22 }} />
-            <Text style={[styles.title, { flex: 1, paddingLeft: 8 }]}>Daily Goal</Text>
-          </View>
+                  <View style={styles.header}>
+                    <MaterialIcons name="checklist" style={{ fontSize: 22 }} />
+                    <Text style={[styles.title, { flex: 1, paddingLeft: 8 }]}>Daily Goal</Text>
+                  </View>
 
                   <View style={styles.circleWrapper}>
                     <CircularProgress current={currentSeconds} target={currentTarget} goal={goal.data} />
@@ -531,8 +531,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '500',
     color: '#1A1A2E',
   },
 

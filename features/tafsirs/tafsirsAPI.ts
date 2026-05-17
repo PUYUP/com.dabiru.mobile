@@ -131,16 +131,70 @@ export const getVerseByRangeAPI = async (query: GetRangeQuery) => {
         translations: query.translations,
         from: query.from,
         to: query.to,
-    }
+    };
+
+    const SUPABASE_TAFSIR_LANGUAGES = ['id']; // bahasa yang perlu tafsir dari supabase
 
     try {
-        const res = await api.get(`/content/api/v4/verses/by_range`, { params: q });
-        return res.data;
+        const chapter = Number(query.from.split(':')[0]);
+        const from = Number(query.from.split(':')[1]);
+        const to = Number(query.to.split(':')[1]);
+
+        const needsSupabaseTafsir = query.language
+            ? SUPABASE_TAFSIR_LANGUAGES.includes(query.language)
+            : false;
+
+        const [qfResponse, supabaseTafsirs] = await Promise.all([
+            api.get(`/content/api/v4/verses/by_range`, { params: q }),
+            needsSupabaseTafsir
+                ? fetchTafsirsFromSupabase(chapter, from, to)
+                : Promise.resolve([]),
+        ]);
+
+        const verses = qfResponse.data.verses.map((verse: any) => ({
+            ...verse,
+            tafsirs: supabaseTafsirs && supabaseTafsirs.length > 0
+                ? supabaseTafsirs.map((item: any) => {
+                    return {
+                        text: item.tafsir,
+                    }
+                })
+                : verse.tafsirs
+        }));
+
+        return { ...qfResponse.data, verses };
     } catch (error: any) {
         console.log("Error get verse by range:", error.response?.data);
         throw error;
     }
-}
+};
+
+// tafsir from supabase
+export const fetchTafsirsFromSupabase = async (
+    chapter: number,
+    from: number,
+    to: number
+) => {
+    return withRetry(async () => {
+        const { data, error } = await supabase
+            .from('tafsir_entries')
+            .select('*')
+            .eq('chapter', chapter)
+            .eq('verse_start', from)
+            .eq('verse_end', to);
+
+        if (error) {
+            console.log(
+                'Supabase get tafsirs error:',
+                error
+            );
+
+            throw error;
+        }
+
+        return data;
+    });
+};
 
 // summarizing with AI
 export const supabaseSummarizeTafsirAPI = async (

@@ -217,11 +217,11 @@ export default function TafsirReader() {
     }
 
     const tafsirText = verses.data && verses.data.length > 0
-        ? verses.data.map((v: any) => v.tafsirs.map((item: any) => item.text).join(' ')).join(' ')
+        ? verses.data.map((v: any) => v.tafsirs?.map((item: any) => item.text).join(' ')).join(' ')
         : null;
 
     const translationText = verses.data && verses.data.length > 0
-        ? verses.data.map((v: any) => v.translations.map((item: any) => item.text).join(' ')).join(' ')
+        ? verses.data.map((v: any) => v.translations?.map((item: any) => item.text).join(' ')).join(' ')
         : null;
 
     const onPauseHandler = (seconds: number) => {

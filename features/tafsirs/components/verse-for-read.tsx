@@ -331,8 +331,8 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     label: {
-        fontSize: 18,
-        fontWeight: '600',
+        fontSize: 16,
+        fontWeight: '500',
         color: '#1A1A2E',
     },
     verseKey: {
