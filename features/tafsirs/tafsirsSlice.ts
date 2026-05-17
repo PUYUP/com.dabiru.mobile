@@ -1,5 +1,5 @@
 import { createSlice, SerializedError } from "@reduxjs/toolkit";
-import { createGoal, getTafsirs, getUthmaniTajweedWithKey, getVerseByKey, summarizing } from "./tafsirsThunk";
+import { createGoal, getTafsirs, getUthmaniTajweedWithKey, getVerseByKey, getVerseByRange, summarizing } from "./tafsirsThunk";
 import { GoalResponse } from "./tafsirsTyping";
 
 const initialState = {
@@ -19,6 +19,11 @@ const initialState = {
         loading: false,
         error: null as SerializedError | null,
     },
+    verses: {
+        data: [] as any[],
+        loading: false,
+        error: null as SerializedError | null,
+    },
     summary: {
         data: null as null,
         loading: false,
@@ -35,6 +40,7 @@ const tafsirsSlice = createSlice({
         },
         resetVerse: (state) => {
             state.verse = initialState.verse;
+            state.verses = initialState.verses;
         }
     },
     extraReducers: (builder) => {
@@ -99,6 +105,24 @@ const tafsirsSlice = createSlice({
                 console.log('Getting verse by key failure!');
                 state.verse.loading = false;
                 state.verse.error = error;
+            })
+
+            // get verse by range
+            .addCase(getVerseByRange.pending, (state) => {
+                console.log('Getting verse by Range...');
+                state.verses.loading = true;
+                state.verses.error = null;
+            })
+            .addCase(getVerseByRange.fulfilled, (state, { payload }) => {
+                console.log('Getting verse by Range success!');
+                state.verses.loading = false;
+                state.verses.error = null;
+                state.verses.data = payload.verses;
+            })
+            .addCase(getVerseByRange.rejected, (state, { error }) => {
+                console.log('Getting verse by Range failure!');
+                state.verses.loading = false;
+                state.verses.error = error;
             })
 
             // summarizing

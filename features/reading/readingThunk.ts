@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getAllChaptersAPI, supabaseCreateReadingSessionAPI, supabaseGetLatestEndedSessionAPI, supabaseGetLatestSessionAPI, supabaseGetSessionAPI, supabaseUpdateReadingSessionAPI } from "./readingAPI";
-import { CreateReadingSessionPayload, GetLatestSessionQuery, GetSessionQuery, UpdateReadingSessionPayload } from "./readingTyping";
+import { getAllChaptersAPI, supabaseCreateReadingSessionAPI, supabaseGetLatestEndedSessionAPI, supabaseGetLatestSessionAPI, supabaseGetSessionAPI, supabaseGetTafsirsAPI, supabaseUpdateReadingSessionAPI } from "./readingAPI";
+import { CreateReadingSessionPayload, GetLatestSessionQuery, GetSessionQuery, GetTafsirQuery, UpdateReadingSessionPayload } from "./readingTyping";
 
 // create session
 export const supabaseCreateReadingSession = createAsyncThunk(
@@ -63,5 +63,21 @@ export const getAllChapters = createAsyncThunk(
   'reading/getAllChapters',
   async () => {
     return await getAllChaptersAPI();
+  }
+);
+
+// get tafsirs
+export const supabaseGetTafsirs = createAsyncThunk(
+  'reading/supabaseGetTafsirs',
+  async (payload: GetTafsirQuery) => {
+    return await supabaseGetTafsirsAPI(payload);
+  }
+);
+
+// get next verse from tafsirs
+export const supabaseGetNextVerse = createAsyncThunk(
+  'reading/supabaseGetNextVerse',
+  async (payload: GetTafsirQuery) => {
+    return await supabaseGetTafsirsAPI(payload);
   }
 );

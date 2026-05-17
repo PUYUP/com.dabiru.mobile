@@ -1,7 +1,7 @@
 import api from "@/services/apiClient";
 import { supabase } from "@/services/supabase";
 import { withRetry } from "@/utils/retry-helper";
-import { CreateGoalPayload, GetVerseQuery, GoalResponse, TafsirSummarizerPayload } from "./tafsirsTyping";
+import { CreateGoalPayload, GetRangeQuery, GetVerseQuery, GoalResponse, TafsirSummarizerPayload } from "./tafsirsTyping";
 
 // ─── Auth Helper ─────────────────────────────────────────────────────────────
 
@@ -115,6 +115,29 @@ export const getVerseByKeyAPI = async (verseKey: string, query: GetVerseQuery) =
         return res.data;
     } catch (error: any) {
         console.log("Error get verse by key:", error.response?.data);
+        throw error;
+    }
+}
+
+// get verse with range
+export const getVerseByRangeAPI = async (query: GetRangeQuery) => {
+    const q = {
+        language: query.language,
+        tafsirs: query.tafsirs ? query.tafsirs : '169',
+        tafsir_fields: 'chapter_id,verse_key',
+        fields: query.fields,
+        words: true,
+        word_fields: 'code_v2',
+        translations: query.translations,
+        from: query.from,
+        to: query.to,
+    }
+
+    try {
+        const res = await api.get(`/content/api/v4/verses/by_range`, { params: q });
+        return res.data;
+    } catch (error: any) {
+        console.log("Error get verse by range:", error.response?.data);
         throw error;
     }
 }

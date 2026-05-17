@@ -23,7 +23,6 @@ import React, {
 	useState,
 } from 'react';
 
-import { useAppSelector } from '@/hooks/redux-hooks';
 import {
 	AppState,
 	AppStateStatus,
@@ -43,7 +42,6 @@ interface ReadingTimerProps {
 	onPause?: (totalSeconds: number) => void;
 	onFinish?: (totalSeconds: number) => void;
 	onResume?: () => void;
-	accentColor?: string;
 	autoStart?: boolean;
     verseData?: any;
 	startFromSeconds?: number;
@@ -74,7 +72,6 @@ const ReadingTimer: React.FC<ReadingTimerProps> = ({
 	onPause,
     onResume,
 	onFinish,
-	accentColor = '#E8A87C',
 	autoStart = false,
     verseData = null,
 	startFromSeconds = 0,
@@ -85,13 +82,6 @@ const ReadingTimer: React.FC<ReadingTimerProps> = ({
 	const isRunningRef = useRef(false);
 	const secondsRef   = useRef(startFromSeconds);
     
-    const verseKeys = verseData.verse_key.split(':');
-    const chapterNumber = verseKeys[0];
-    const verseNumber = verseKeys[1];
-
-    const goal = useAppSelector((state: any) => state.user.goal);
-    const dailyTargetSeconds = goal?.data?.dailyTargetSeconds ?? 0;
-
 	/**
 	 * Basis timestamp timer.
 	 * Rumus: Date.now() - (accumulated_seconds * 1000)

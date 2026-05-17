@@ -1,6 +1,6 @@
 import api from "@/services/apiClient";
 import { supabase } from "@/services/supabase";
-import { CreateReadingSessionPayload, GetLatestSessionQuery, GetSessionQuery, UpdateReadingSessionPayload } from "./readingTyping";
+import { CreateReadingSessionPayload, GetLatestSessionQuery, GetSessionQuery, GetTafsirQuery, UpdateReadingSessionPayload } from "./readingTyping";
 
 // ─── Retry Helper ────────────────────────────────────────────────────────────
 
@@ -79,11 +79,24 @@ export const supabaseGetLatestSessionAPI = async (
     const userId = await getAuthenticatedUserId();
 
     return withRetry(async () => {
-        const { data, error } = await supabase
+        let qs = supabase
             .from("reading_sessions")
             .select("*")
-            .eq("verse_key", query.verse_key)
-            .eq("user_id", userId)
+            .eq("user_id", userId);
+        
+        if (query.current_chapter_number) {
+            qs = qs.eq('current_chapter_number', query.current_chapter_number);
+        }
+
+        if (query.from_verse_number) {
+            qs = qs.eq('from_verse_number', query.from_verse_number);
+        }
+
+        if (query.to_verse_number) {
+            qs = qs.eq('to_verse_number', query.to_verse_number);
+        }
+
+        const { data, error } = await qs
             .order("created_at", { ascending: false })
             .limit(1);
 
@@ -103,15 +116,28 @@ export const supabaseGetLatestEndedSessionAPI = async (
     const userId = await getAuthenticatedUserId();
 
     return withRetry(async () => {
-        const { data, error } = await supabase
+        let qs = supabase
             .from("reading_sessions")
             .select("*")
-            .eq("verse_key", query.verse_key)
             .eq("user_id", userId)
-            .eq("status", "ended")
+            .eq("status", "ended");
+
+         if (query.current_chapter_number) {
+            qs = qs.eq('current_chapter_number', query.current_chapter_number);
+        }
+
+        if (query.from_verse_number) {
+            qs = qs.eq('from_verse_number', query.from_verse_number);
+        }
+
+        if (query.to_verse_number) {
+            qs = qs.eq('to_verse_number', query.to_verse_number);
+        }
+
+        const { data, error } = await qs
             .order("created_at", { ascending: false })
             .limit(1);
-
+    
         if (error) {
             console.log("Supabase getting latest ended session error:", error);
             throw error;
@@ -135,8 +161,16 @@ export const supabaseGetSessionAPI = async (query: GetSessionQuery) => {
             querySet = querySet.eq('status', query.status);
         }
 
-        if (query.verseKey) {
-            querySet = querySet.eq('verse_key', query.verseKey);
+        if (query.chapter) {
+            querySet = querySet.eq('current_chapter_number', query.chapter);
+        }
+
+        if (query.from_verse_number) {
+            querySet = querySet.eq('from_verse_number', query.from_verse_number);
+        }
+
+        if (query.to_verse_number) {
+            querySet = querySet.eq('to_verse_number', query.to_verse_number);
         }
         
         querySet = querySet
@@ -156,7 +190,7 @@ export const supabaseGetSessionAPI = async (query: GetSessionQuery) => {
 
 // ─── Chapter APIs ─────────────────────────────────────────────────────────────
 
-// get all chapters
+// get qf all chapters
 export const getAllChaptersAPI = async () => {
     try {
         const res = await api.get(`/content/api/v4/chapters`);
@@ -165,4 +199,25 @@ export const getAllChaptersAPI = async () => {
         console.log("Error get chapters:", error.response?.data);
         throw error;
     }
+};
+
+// get sb tafsirs
+export const supabaseGetTafsirsAPI = async (query: GetTafsirQuery) => {
+    const { from, to, ...rest } = query;
+
+    return withRetry(async () => {
+        let querySet = supabase
+            .from("tafsir_entries")
+            .select(`*`)
+            .match(rest);
+
+        const { data, error } = await querySet;
+
+        if (error) {
+            console.log("Supabase getting tafsirs error:", error);
+            throw error;
+        }
+
+        return data[0];
+    });
 };

@@ -334,10 +334,11 @@ export default function StrikeCard() {
 
     const target = goalData.dailyTargetSeconds;
     const current = goalData.secondsRead + goalData.manuallyAddedSeconds;
+    const progress = target ? Math.round((current / target) * 100) : 0;
 
     setCurrentSeconds(current);
     setCurrentTarget(target);
-    setPercentage(target ? Math.round((current / target) * 100) : 0);
+    setPercentage(progress);
   }, [goalData?.dailyTargetSeconds, goalData?.secondsRead, goalData?.manuallyAddedSeconds]);
 
   useEffect(() => {

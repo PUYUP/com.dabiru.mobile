@@ -1,5 +1,5 @@
-import { getAllChapters, supabaseGetLatestSession } from "@/features/reading/readingThunk";
-import { getUthmaniTajweedWithKey } from "@/features/tafsirs/tafsirsThunk";
+import { getAllChapters, supabaseGetLatestSession, supabaseGetNextVerse } from "@/features/reading/readingThunk";
+import { getVerseByRange } from "@/features/tafsirs/tafsirsThunk";
 import { getLatestSession } from "@/features/user/userThunks";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
 import { formatSeconds } from "@/utils/format-seconds";
@@ -42,16 +42,19 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
     const router = useRouter();
     const dispatch = useAppDispatch();
 
-    const uthmaniTajweed = useAppSelector((state: any) => state.tafsirs.uthmaniTajweed);
     const latestSession = useAppSelector((state: any) => state.user.latestSession);
     const sbLatestSession = useAppSelector((state: any) => state.reading.supabaseLatestSession);
     const sbCreateSession = useAppSelector((state: any) => state.reading.supabaseCreateSession);
     const chapters = useAppSelector((state: any) => state.reading.chapters);
+    const nextVerse = useAppSelector((state: any) => state.reading.supabaseNextVerse);
+    const preferences = useAppSelector((state: any) => state.config.preferences);
+    const verses = useAppSelector((state: any) => state.tafsirs.verses);
 
-    const [usedVerseKey, setUsedVerseKey] = useState<string>(verseKey);
     const [nextSurahName, setNextSurahName] = useState<string | undefined>();
     const [isEnded, setIsEnded] = useState<boolean>(false);
     const [secondsRead, setSecondsRead] = useState<number>(0);
+    const [renderVerse, setRenderVerse] = useState<string>('');
+    const [verseRange, setVerseRange] = useState<string>('');
 
     const surahVerseCounts = useMemo<Record<number, number>>(() => {
         const counts: Record<number, number> = {};
@@ -64,7 +67,19 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
     const initialVerse = () => {
         setIsEnded(true);
         setSecondsRead(0);
-        dispatch(getUthmaniTajweedWithKey(usedVerseKey) as any);
+
+        const chapterNumber = Number(verseKey.split(':')[0]);
+        const verseNumber = Number(verseKey.split(':')[1]);
+
+        dispatch(supabaseGetNextVerse({
+            chapter: chapterNumber,
+            verse_start: verseNumber,
+        }) as any);
+
+        const surah = chapters.data.find((item: any) => item.id === chapterNumber);
+        if (surah) {
+            setNextSurahName(surah.name_simple);
+        }
     }
 
     // ─── Step 1: Fetch QF latest session ─────────────────────────────────────
@@ -77,11 +92,18 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
     useEffect(() => {
         if (latestSession.loading) return;
         if (latestSession.data) {
-            const currentVerseKey = latestSession.data
-                ? `${latestSession.data.chapterNumber}:${latestSession.data.verseNumber}`
-                : usedVerseKey;
+            let chapter: number = Number(verseKey.split(':')[0]);
+            let verse: number = Number(verseKey.split(':')[1]);
 
-            dispatch(supabaseGetLatestSession({ verse_key: currentVerseKey }) as any);
+            if (latestSession.data) {
+                chapter = latestSession.data.chapterNumber;
+                verse = latestSession.data.verseNumber;
+            }
+
+            dispatch(supabaseGetLatestSession({ 
+                current_chapter_number: chapter,
+                from_verse_number: verse,
+            }) as any);
         } else {
             // no qf session
             initialVerse();
@@ -92,8 +114,8 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
     useEffect(() => {
         if (sbLatestSession.loading) return;
         if (sbLatestSession.data) {
-            const { status, current_chapter_number, current_verse_number } = sbLatestSession.data;
-            const currentVerseKey = `${current_chapter_number}:${current_verse_number}`;
+            const { status, current_chapter_number, from_verse_number } = sbLatestSession.data;
+            const currentVerseKey = `${current_chapter_number}:${from_verse_number}`;
             const ended = status === 'ended';
 
             setIsEnded(ended);
@@ -104,52 +126,40 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
                 if (!nextVerseKey) return;
 
                 const nextChapterNumber = Number(nextVerseKey.split(':')[0]);
+                const nextVerseNumber = Number(nextVerseKey.split(':')[1]);
                 const surah = chapters.data.find((item: any) => item.id === nextChapterNumber);
 
                 if (surah) {
-                    setNextSurahName(surah.name_complex);
-                    setUsedVerseKey(nextVerseKey);
+                    setNextSurahName(surah.name_simple);
                 }
 
-                dispatch(getUthmaniTajweedWithKey(nextVerseKey) as any);
+                dispatch(supabaseGetNextVerse({
+                    chapter: nextChapterNumber,
+                    verse_start: nextVerseNumber,
+                }) as any);
             } else {
                 const surah = chapters.data.find(
                     (item: any) => item.id === latestSession.data?.chapterNumber
                 );
 
                 if (surah) {
-                    setNextSurahName(surah.name_complex);
-                    setUsedVerseKey(currentVerseKey);
+                    setNextSurahName(surah.name_simple);
                 }
 
-                dispatch(getUthmaniTajweedWithKey(currentVerseKey) as any);
+                dispatch(supabaseGetNextVerse({
+                    chapter: current_chapter_number,
+                    verse_start: from_verse_number,
+                }) as any);
             }
         } else {
             // no sb session
-            if (latestSession.data) {
-                const currentVerseKey = `${latestSession.data.chapterNumber}:${latestSession.data.verseNumber}`;
-                const nextVerseKey = getNextVerseKey(currentVerseKey, surahVerseCounts);
-                if (!nextVerseKey) return;
-
-                const surah = chapters.data.find(
-                    (item: any) => item.id === latestSession.data?.chapterNumber
-                );
-
-                if (surah) {
-                    setNextSurahName(surah.name_complex);
-                    setUsedVerseKey(currentVerseKey);
-                }
-
-                dispatch(getUthmaniTajweedWithKey(currentVerseKey) as any);
-            } else {
-                initialVerse();
-            }
+            initialVerse();
         }
     }, [sbLatestSession.loading]);
 
     useEffect(() => {
         if (sbLatestSession.data) {
-            const { status, current_chapter_number, current_verse_number } = sbLatestSession.data;
+            const { status } = sbLatestSession.data;
             const ended = status === 'ended';
 
             setIsEnded(ended);
@@ -161,23 +171,70 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
     useEffect(() => {
         if (!sbCreateSession.data || sbCreateSession.data.status !== 'ended') return;
 
-        const { current_chapter_number, current_verse_number } = sbCreateSession.data;
-        const currentVerseKey = `${current_chapter_number}:${current_verse_number}`;
+        const { current_chapter_number, to_verse_number } = sbCreateSession.data;
+        const currentVerseKey = `${current_chapter_number}:${to_verse_number}`;
         const nextVerseKey = getNextVerseKey(currentVerseKey, surahVerseCounts);
         if (!nextVerseKey) return;
 
         const nextChapterNumber = Number(nextVerseKey.split(':')[0]);
+        const nextVerseNumber = Number(nextVerseKey.split(':')[1]);
         const surah = chapters.data.find((item: any) => item.id === nextChapterNumber);
 
         if (surah) {
-            setNextSurahName(surah.name_complex);
-            setUsedVerseKey(nextVerseKey);
+            setNextSurahName(surah.name_simple);
         }
+        
+        dispatch(supabaseGetNextVerse({
+            chapter: nextChapterNumber,
+            verse_start: nextVerseNumber,
+        }) as any);
 
-        dispatch(getUthmaniTajweedWithKey(nextVerseKey) as any);
         setSecondsRead(0);
         setIsEnded(true);
     }, [sbCreateSession.data]);
+
+    // getting next verses
+    useEffect(() => {
+        if (nextVerse.loading) return;
+        if (!nextVerse.data) return;
+
+        const chapter = nextVerse.data.chapter;
+        const start: number = nextVerse.data.verse_start;
+        const end: number = nextVerse.data.verse_end;
+
+        // ensure start/end are typed as numbers to avoid comparing incompatible literal types
+        // const start: number = 4;
+        // const end: number = 6;
+
+        const from: string = chapter + ':' + start;
+        const to: string = chapter + ':' + end;
+
+        dispatch(getVerseByRange({
+            query: {
+                language: preferences.language.language,
+                tafsirs: preferences.tafsirs.selectedTafsirs[0],
+                translations: preferences.translations.selectedTranslations[0],
+                fields: 'text_uthmani_tajweed,chapter_id,verse_key',
+                from: from,
+                to: to,
+            },
+        }) as any);
+
+        if (start != end) {
+            setVerseRange(start + '-' + end);
+        } else {
+            setVerseRange(start.toString());
+        }
+    }, [nextVerse]);
+
+    // build verse for render
+    useEffect(() => {
+        if (verses.loading) return;
+        if (!verses.data || verses.data.length <= 0) return;
+
+        const textUthmani = verses.data.map((item: any) => item.text_uthmani_tajweed);
+        setRenderVerse(textUthmani.join(' '));
+    }, [verses]);
 
     // ─── Loading per step ─────────────────────────────────────────────────────
     if (chapters.loading || latestSession.loading) {
@@ -189,17 +246,21 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
 
     // ✅ Hanya hide jika belum pernah ada data (initial load)
     // Jika sudah ada data sebelumnya, biarkan render dengan data lama
-    if (uthmaniTajweed.loading && !uthmaniTajweed.data) {
+    if (verses.loading || nextVerse.loading) {
         return <LoadingSkeleton step="verse" />;
     }
-    if (!uthmaniTajweed.data) return null;
+    if (!verses.data && !nextVerse.data) return null;
 
     const onRead = () => {
         try {
             router.push({
                 pathname: '/tafsir-reader',
                 params: {
-                    verseKey: usedVerseKey,
+                    chapter: nextVerse.data.chapter,
+                    from: nextVerse.data.verse_start,
+                    to: nextVerse.data.verse_end,
+                    // from: 4,
+                    // to: 6,
                     source: 'verse-for-read',
                 },
             });
@@ -217,7 +278,7 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
 
                         <View style={{ display: 'flex', flexDirection: 'row', gap: 6 }}>
                             <Text style={styles.label}>{nextSurahName}</Text>
-                            <Text style={styles.label}>({usedVerseKey})</Text>
+                            <Text style={styles.label}>({verseRange})</Text>
                         </View>
                         
                     </View>
@@ -242,7 +303,7 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
             </View>
 
             <VerseRenderer
-                verseText={uthmaniTajweed.data.text_uthmani_tajweed}
+                verseText={renderVerse}
                 fontSize={24}
                 lineHeight={42}
             />

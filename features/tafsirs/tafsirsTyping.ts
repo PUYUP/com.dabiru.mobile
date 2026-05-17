@@ -12,11 +12,16 @@ export type GoalResponse = {
     updated_at: string;
 } & CreateGoalPayload;
 
-export type GetVerseQuery = {
-    language: string;
-    translations: string;
-    tafsirs: string;
-    fields: string;
+export interface GetVerseQuery {
+    language?: string;
+    translations?: string;
+    tafsirs?: string;
+    fields?: string;
+}
+
+export interface GetRangeQuery extends GetVerseQuery {
+    from: string;
+    to: string;
 }
 
 export interface TafsirSummarizerPayload {

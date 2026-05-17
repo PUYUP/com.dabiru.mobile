@@ -19,7 +19,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PRIMARY = '#258c91';
 const PRIMARY_LIGHT = '#e8f5f5';
-const PRIMARY_DARK = '#0f6e56';
 
 function Loading() {
   return (
@@ -95,14 +94,6 @@ export default function TabTwoScreen() {
               (c: any) => c.id == item.current_chapter_number
             );
 
-            const verseNum = item.verse_key?.split(':')?.[1] ?? '—';
-            const initial =
-              surah?.name_simple
-                  ?.replace(/[^\p{L}\p{N}\s]/gu, '') // hapus tanda baca
-                  .replace(/\s+/g, '') // hapus spasi
-                  .slice(0, 3)
-                  .toUpperCase() ?? '?';
-
             return (
               <TouchableOpacity
                 key={item.id}
@@ -116,7 +107,9 @@ export default function TabTwoScreen() {
                     pathname: '/history-detail',
                     params: {
                       id: item.id,
-                      verseKey: item.verse_key,
+                      chapter: item.current_chapter_number,
+                      from: item.from_verse_number,
+                      to: item.to_verse_number,
                     },
                   })
                 }
@@ -127,7 +120,7 @@ export default function TabTwoScreen() {
                     {surah?.name_simple ?? '—'}
                   </Text>
                   <Text style={styles.sessionSub}>
-                    Verse {verseNum} · {item.verse_key}
+                    Verse {item.current_chapter_number} · {item.from_verse_number != item.to_verse_number ? item.from_verse_number + (item.to_verse_number ? '-' + item.to_verse_number : '') : item.to_verse_number}
                   </Text>
                 </View>
 

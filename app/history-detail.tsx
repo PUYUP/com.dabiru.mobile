@@ -1,7 +1,7 @@
 import { supabaseGetChildSessions, supabaseGetSession, supabaseUpdateReadingSession } from "@/features/reading/readingThunk";
 import { GetSessionQuery } from "@/features/reading/readingTyping";
 import { resetSummary } from "@/features/tafsirs/tafsirsSlice";
-import { getVerseByKey, summarizing } from "@/features/tafsirs/tafsirsThunk";
+import { getVerseByRange, summarizing } from "@/features/tafsirs/tafsirsThunk";
 import { TafsirSummarizerPayload } from "@/features/tafsirs/tafsirsTyping";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
 import { formatSeconds } from "@/utils/format-seconds";
@@ -58,16 +58,13 @@ function EmptyScreen() {
 export default function HistoryDetailScreen() {
     const insets = useSafeAreaInsets();
     const dispatch = useAppDispatch();
-    const { id, verseKey } = useLocalSearchParams();
-    const verseKeys = (verseKey as string).split(':');
-    const chapterNumber = verseKeys?.length > 1 ? verseKeys[0] : null;
-    const verseNumber = verseKeys?.length > 1 ? verseKeys[1] : null;
+    const { id, chapter, from, to } = useLocalSearchParams();
 
     const summary = useAppSelector((state: any) => state.tafsirs.summary);
     const session = useAppSelector((state: any) => state.reading.supabaseSession);
     const childSessions = useAppSelector((state: any) => state.reading.supabaseChildSessions);
     const chapters = useAppSelector((state: any) => state.reading.chapters);
-    const verse = useAppSelector((state: any) => state.tafsirs.verse);
+    const verses = useAppSelector((state: any) => state.tafsirs.verses);
     const config = useAppSelector((state: any) => state.config);
     const preferences = config.preferences;
     const [tafsirPoints, setTafsirPoints] = useState<any[]>([]);
@@ -76,13 +73,17 @@ export default function HistoryDetailScreen() {
         from: 0,
         to: 1,
         status: "ended",
-        verseKey: verseKey as string,
+        chapter: Number(chapter),
+        from_verse_number: Number(from),
+        to_verse_number: Number(to),
     };
 
     const childQuery: GetSessionQuery = {
         from: 1,
         to: 50,
-        verseKey: verseKey as string,
+        chapter: Number(chapter),
+        from_verse_number: Number(from),
+        to_verse_number: Number(to),
     };
 
     // initial loader
@@ -94,25 +95,25 @@ export default function HistoryDetailScreen() {
 
     // verse and session load listener
     useEffect(() => {
-        if (verse.loading) return;
-        if (!chapterNumber || !verseNumber) return;
+        if (verses.loading) return;
+        if (!chapter || !from || !to) return;
 
-        if (verse.data) {
+        if (verses.data && verses.data.length > 0) {
             if (session.data) {
                 if (!session.data.notes) {
                     // generating summary / notes
-                    const tafsirText = verse.data.tafsirs
-                        ? verse.data.tafsirs.map((item: any) => item.text).join(' ')
+                    const tafsirText = verses.data && verses.data.length > 0
+                        ? verses.data.map((v: any) => v.tafsirs.map((item: any) => item.text).join(' ')).join(' ')
                         : null;
                     
                     const surah = chapters.data.find(
-                        (c: any) => c.id == chapterNumber
+                        (c: any) => c.id == chapter
                     );
 
                     const payload: TafsirSummarizerPayload = {
                         tafsir_text: tafsirText,
-                        verse_number: parseInt(verseNumber as string),
-                        chapter_number: parseInt(chapterNumber as string),
+                        verse_number: Number(from),
+                        chapter_number: Number(chapter),
                         surah_name: surah.name_simple,
                         language: preferences.language.language,
                     }
@@ -124,17 +125,18 @@ export default function HistoryDetailScreen() {
                 }
             }
         } else {
-            dispatch(getVerseByKey({
-                verseKey: verseKey as string,
+            dispatch(getVerseByRange({
                 query: {
                     language: preferences.language.language,
                     tafsirs: preferences.tafsirs.selectedTafsirs[0],
                     translations: preferences.translations.selectedTranslations[0],
                     fields: 'text_uthmani_tajweed,chapter_id,verse_key',
+                    from: chapter + ':' + from,
+                    to: chapter + ':' + to,
                 },
             }) as any);
         }
-    }, [verse, session]);
+    }, [verses, session]);
 
     // summary and session listener
     useEffect(() => {
@@ -194,7 +196,7 @@ export default function HistoryDetailScreen() {
                     <Text style={styles.heroTitle}>{surah?.name_simple ?? "—"}</Text>
                     <View style={styles.heroSubRow}>
                         <View style={styles.verseBadge}>
-                            <Text style={styles.verseBadgeText}>Verse {session.data.current_verse_number}</Text>
+                            <Text style={styles.verseBadgeText}>Verse {session.data.from_verse_number}</Text>
                         </View>
                         <Text style={styles.heroSub}>Session completed</Text>
                     </View>

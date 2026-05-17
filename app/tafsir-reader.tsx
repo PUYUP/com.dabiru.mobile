@@ -6,7 +6,7 @@ import { GetSessionQuery } from "@/features/reading/readingTyping";
 import TextRenderer from "@/features/tafsirs/components/text-renderer";
 import VerseRenderer from "@/features/tafsirs/components/verse-renderer";
 import { resetVerse } from "@/features/tafsirs/tafsirsSlice";
-import { getVerseByKey } from "@/features/tafsirs/tafsirsThunk";
+import { getVerseByRange } from "@/features/tafsirs/tafsirsThunk";
 import { addActivity, createReadingSession, getGoal, getLatestSession } from "@/features/user/userThunks";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
 import { format } from "date-fns/format";
@@ -109,18 +109,14 @@ export default function TafsirReader() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const dispatch = useAppDispatch();
-    const { verseKey, source } = useLocalSearchParams();
+    const { source, chapter, from, to } = useLocalSearchParams();
 
     const [fontSize, setFontSize] = useState(FONT_SIZE_DEFAULT);
 
     const increaseFont = () => setFontSize((prev) => Math.min(prev + FONT_SIZE_STEP, FONT_SIZE_MAX));
     const decreaseFont = () => setFontSize((prev) => Math.max(prev - FONT_SIZE_STEP, FONT_SIZE_MIN));
 
-    const verseKeys = (verseKey as string).split(':');
-    const chapterNumber = verseKeys?.length > 1 ? verseKeys[0] : null;
-    const verseNumber = verseKeys?.length > 1 ? verseKeys[1] : null;
-
-    const verse = useAppSelector((state: any) => state.tafsirs.verse);
+    const verses = useAppSelector((state: any) => state.tafsirs.verses);
     const config = useAppSelector((state: any) => state.config);
     const preferences = config.preferences;
     const sbLatestSession = useAppSelector((state: any) => state.reading.supabaseLatestSession);
@@ -129,9 +125,10 @@ export default function TafsirReader() {
     const chapters = useAppSelector((state: any) => state.reading.chapters);
     const goal = useAppSelector((state: any) => state.user.goal);
     const dailyTargetSeconds = goal.data?.dailyTargetSeconds ?? 0;
+    const [renderVerse, setRenderVerse] = useState<string>('');
 
     useEffect(() => {
-        if (!chapterNumber || !verseNumber) return;
+        if (!chapter || !from || !to) return;
 
         // reset verse
         dispatch(resetVerse());
@@ -140,31 +137,33 @@ export default function TafsirReader() {
             dispatch(getLatestSession() as any);
         }
 
-        dispatch(getVerseByKey({
-            verseKey: verseKey as string,
+        dispatch(getVerseByRange({
             query: {
                 language: preferences.language.language,
                 tafsirs: preferences.tafsirs.selectedTafsirs.join(','),
                 translations: preferences.translations.selectedTranslations[0],
                 fields: 'text_uthmani_tajweed,chapter_id,verse_key',
+                from: chapter + ':' + from,
+                to: chapter + ':' + to,
             },
         }) as any);
-    }, []);
+    }, [chapter, from, to]);
 
     useEffect(() => {
         if (qfLatestSession.loading || sbLatestSession.loading) return;
-        if (!chapterNumber || !verseNumber) return;
+        if (!chapter || !from || !to) return;
 
-        if (qfLatestSession.data?.chapterNumber != chapterNumber || qfLatestSession.data?.verseNumber != verseNumber) {
+        if (qfLatestSession.data?.chapterNumber != chapter && qfLatestSession.data?.verseNumber != from) {
             dispatch(createReadingSession({
-                chapterNumber: parseInt(chapterNumber),
-                verseNumber: parseInt(verseNumber),
+                chapterNumber: Number(chapter),
+                verseNumber: Number(from),
             }) as any);
 
             dispatch(supabaseCreateReadingSession({
                 data: {
-                    current_chapter_number: parseInt(chapterNumber),
-                    current_verse_number: parseInt(verseNumber),
+                    current_chapter_number: Number(chapter),
+                    from_verse_number: Number(from),
+                    to_verse_number: Number(to),
                     status: 'start',
                     seconds_read: 0,
                     daily_target_seconds: dailyTargetSeconds,
@@ -189,7 +188,9 @@ export default function TafsirReader() {
                     pathname: '/history-detail',
                     params: {
                         id: sbCreateSession.data.id,
-                        verseKey: sbCreateSession.data.verse_key,
+                        from: from,
+                        to: to,
+                        chapter: chapter,
                     },
                 });
             }
@@ -198,33 +199,44 @@ export default function TafsirReader() {
         }
     }, [sbCreateSession.data]);
 
-    if (sbLatestSession.loading || qfLatestSession.loading || verse.loading) {
+    // set render verse
+    useEffect(() => {
+        if (verses.loading) return;
+        if (!verses.data || verses.data.length <= 0) return;
+
+        const textUthmani = verses.data.map((item: any) => item.text_uthmani_tajweed);
+        setRenderVerse(textUthmani.join(' '));
+    }, [verses]);
+
+    if (sbLatestSession.loading || qfLatestSession.loading || verses.loading) {
         return <LoadingSkeleton />;
     }
 
-    if (!verse.data) {
+    if (!verses.data || verses.data.length <= 0) {
         return <VerseUndefined />;
     }
 
-    const tafsirText = verse.data.tafsirs
-        ? verse.data.tafsirs.map((item: any) => item.text).join(' ')
+    const tafsirText = verses.data && verses.data.length > 0
+        ? verses.data.map((v: any) => v.tafsirs.map((item: any) => item.text).join(' ')).join(' ')
         : null;
 
-    const translationText = verse.data.translations
-        ? verse.data.translations.map((item: any) => item.text).join(' ')
+    const translationText = verses.data && verses.data.length > 0
+        ? verses.data.map((v: any) => v.translations.map((item: any) => item.text).join(' ')).join(' ')
         : null;
 
     const onPauseHandler = (seconds: number) => {
-        if (!chapterNumber || !verseNumber) return;
+        if (!chapter || !from || !to) return;
         if (seconds <= 0) return;
 
-        const prevSecondsRead = sbLatestSession.data?.total_read_seconds ?? 0;
-        const rootSessionId = sbLatestSession.data?.root_session_id || sbLatestSession.data?.id;
+        const status = sbLatestSession.data?.status;
+        const prevSecondsRead = status == 'ended' ? 0 : (sbLatestSession.data?.total_read_seconds ?? 0);
+        const rootSessionId = status == 'ended' ? null : (sbLatestSession.data?.root_session_id || sbLatestSession.data?.id);
 
         dispatch(supabaseCreateReadingSession({
             data: {
-                current_chapter_number: parseInt(chapterNumber),
-                current_verse_number: parseInt(verseNumber),
+                current_chapter_number: Number(chapter),
+                from_verse_number: Number(from),
+                to_verse_number: Number(to),
                 status: rootSessionId ? 'continue' : 'start',
                 seconds_read: seconds - prevSecondsRead,
                 total_read_seconds: seconds,
@@ -237,7 +249,7 @@ export default function TafsirReader() {
             addActivity({
                 seconds: seconds - prevSecondsRead,
                 mushafId: MUSHAF_ID,
-                ranges: [`${verseKey}-${verseKey}`],
+                ranges: [`${chapter}:${from}-${chapter}:${to}`],
                 type: 'QURAN' as any,
                 date: format(new Date(), 'yyyy-MM-dd'),
             }) as any
@@ -245,11 +257,11 @@ export default function TafsirReader() {
     };
 
     const onResumeHandler = () => {
-        if (!chapterNumber || !verseNumber) return;
+        if (!chapter || !from || !to) return;
     };
 
     const onFinishHandler = (seconds: number) => {
-        if (!chapterNumber || !verseNumber) return;
+        if (!chapter || !from || !to) return;
         if (seconds <= 0) return;
 
         const prevSecondsRead = sbLatestSession.data?.total_read_seconds ?? 0;
@@ -257,8 +269,9 @@ export default function TafsirReader() {
 
         dispatch(supabaseCreateReadingSession({
             data: {
-                current_chapter_number: parseInt(chapterNumber),
-                current_verse_number: parseInt(verseNumber),
+                current_chapter_number: Number(chapter),
+                from_verse_number: Number(from),
+                to_verse_number: Number(to),
                 status: 'ended',
                 seconds_read: seconds - prevSecondsRead,
                 total_read_seconds: seconds,
@@ -303,13 +316,13 @@ export default function TafsirReader() {
                             </View>
 
                             <View style={styles.verseBadge}>
-                                <Text style={styles.verseBadgeText}>{verseKey as string}</Text>
+                                <Text style={styles.verseBadgeText}>{from != to ? from + '-' + to : from}</Text>
                             </View>
                         </View>
 
                         {/* Arabic text */}
                         <View style={styles.verseWrap}>
-                            <VerseRenderer verseText={verse.data.text_uthmani_tajweed} />
+                            <VerseRenderer verseText={renderVerse} />
                         </View>
 
                         {/* Translation */}
@@ -338,7 +351,6 @@ export default function TafsirReader() {
                         onResume={onResumeHandler}
                         onFinish={onFinishHandler}
                         autoStart={true}
-                        verseData={verse.data}
                         startFromSeconds={sbLatestSession.data?.status === 'ended' ? 0 : (sbLatestSession.data?.total_read_seconds ?? 0)}
                     />
                 </View>

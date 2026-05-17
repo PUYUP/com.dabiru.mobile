@@ -5,7 +5,8 @@ export interface CreateReadingSessionPayload {
     user_id?: string; // uuid4 coming from supabase
     ended_at?: string;
     current_chapter_number: number;
-    current_verse_number: number;
+    from_verse_number: number;
+    to_verse_number: number;
     status: ReadingStatus;
     total_read_seconds?: number;
     daily_target_seconds?: number;
@@ -17,12 +18,23 @@ export interface UpdateReadingSessionPayload {
 }
 
 export interface GetLatestSessionQuery {
-    verse_key: string;
+    current_chapter_number: number;
+    from_verse_number: number;
+    to_verse_number?: number;
 }
 
 export interface GetSessionQuery {
     from: number;
     to: number;
     status?: ReadingStatus;
-    verseKey?: string;
+    chapter?: number;
+    from_verse_number?: number;
+    to_verse_number?: number;
+}
+
+export interface GetTafsirQuery {
+    from?: number;
+    to?: number;
+    chapter?: number;
+    verse_start?: number;
 }

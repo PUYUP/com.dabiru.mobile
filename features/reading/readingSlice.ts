@@ -5,6 +5,7 @@ import {
     supabaseGetChildSessions,
     supabaseGetLatestEndedSession,
     supabaseGetLatestSession,
+    supabaseGetNextVerse,
     supabaseGetSession,
     supabaseGetSessions,
     supabaseUpdateReadingSession
@@ -44,6 +45,11 @@ const initialState = {
         error: null as SerializedError | null,
     },
     supabaseSession: {
+        data: null as null,
+        loading: false,
+        error: null as SerializedError | null,
+    },
+    supabaseNextVerse: {
         data: null as null,
         loading: false,
         error: null as SerializedError | null,
@@ -211,6 +217,23 @@ const readingSlice = createSlice({
         .addCase(getAllChapters.rejected, (state, { error }) => {
             state.chapters.loading = false;
             state.chapters.error = error;
+        })
+
+        // get next verse from supabase
+        .addCase(supabaseGetNextVerse.pending, (state) => {
+            console.log('Getting supabaseGetNextVerse...');
+            state.supabaseNextVerse.loading = true;
+            state.supabaseNextVerse.error = null;
+        })
+        .addCase(supabaseGetNextVerse.fulfilled, (state, { payload }) => {
+            console.log('Getting supabaseGetNextVerse success!');
+            state.supabaseNextVerse.loading = false;
+            state.supabaseNextVerse.error = null;
+            state.supabaseNextVerse.data = payload;
+        })
+        .addCase(supabaseGetNextVerse.rejected, (state, { error }) => {
+            state.supabaseNextVerse.loading = false;
+            state.supabaseNextVerse.error = error;
         })
     }
 });
