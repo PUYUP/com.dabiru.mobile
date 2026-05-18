@@ -11,7 +11,7 @@ import { addActivity, createReadingSession, getGoal, getLatestSession } from "@/
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
 import { format } from "date-fns/format";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -126,6 +126,10 @@ export default function TafsirReader() {
     const goal = useAppSelector((state: any) => state.user.goal);
     const dailyTargetSeconds = goal.data?.dailyTargetSeconds ?? 0;
     const [renderVerse, setRenderVerse] = useState<string>('');
+   
+    const scrollRef = useRef({ x: 0, y: 0 });
+    const sessionCreated = useRef(false);
+    const scrollViewRef = useRef<ScrollView>(null);
 
     useEffect(() => {
         if (!chapter || !from || !to) return;
@@ -152,8 +156,11 @@ export default function TafsirReader() {
     useEffect(() => {
         if (qfLatestSession.loading || sbLatestSession.loading) return;
         if (!chapter || !from || !to) return;
+        if (sessionCreated.current) return;
 
         if (qfLatestSession.data?.chapterNumber != chapter && qfLatestSession.data?.verseNumber != from) {
+            sessionCreated.current = true;
+
             dispatch(createReadingSession({
                 chapterNumber: Number(chapter),
                 verseNumber: Number(from),
@@ -167,6 +174,8 @@ export default function TafsirReader() {
                     status: 'start',
                     seconds_read: 0,
                     daily_target_seconds: dailyTargetSeconds,
+                    scroll_y: Math.round(scrollRef.current.y),
+                    scroll_x: Math.round(scrollRef.current.x),
                 }
             }) as any);
         }
@@ -198,6 +207,20 @@ export default function TafsirReader() {
             dispatch(getGoal() as any);
         }
     }, [sbCreateSession.data]);
+
+    // Auto scroll setelah sbLatestSession loaded
+    useEffect(() => {
+        if (sbLatestSession.loading) return;
+        if (!sbLatestSession.data?.scroll_y) return;
+
+        // Slight delay agar konten sudah render dulu
+        setTimeout(() => {
+            scrollViewRef.current?.scrollTo({
+                y: sbLatestSession.data.scroll_y,
+                animated: false,
+            });
+        }, 300);
+    }, [sbLatestSession.loading]);
 
     // set render verse
     useEffect(() => {
@@ -242,6 +265,8 @@ export default function TafsirReader() {
                 total_read_seconds: seconds,
                 daily_target_seconds: dailyTargetSeconds,
                 root_session_id: rootSessionId,
+                scroll_y: Math.round(scrollRef.current.y),
+                scroll_x: Math.round(scrollRef.current.x),
             }
         }) as any);
 
@@ -278,6 +303,8 @@ export default function TafsirReader() {
                 ended_at: new Date().toISOString(),
                 daily_target_seconds: dailyTargetSeconds,
                 root_session_id: rootSessionId,
+                scroll_y: Math.round(scrollRef.current.y),
+                scroll_x: Math.round(scrollRef.current.x),
             },
             purpose: 'finish'
         }) as any);
@@ -286,6 +313,11 @@ export default function TafsirReader() {
     const surah = chapters.data.find(
         (c: any) => c.id == qfLatestSession.data.chapterNumber
     );
+
+    const handleScroll = (event: any) => {
+        const { x, y } = event.nativeEvent.contentOffset;
+        scrollRef.current = { x, y };
+    };
 
     return (
         <>
@@ -305,8 +337,11 @@ export default function TafsirReader() {
 
             <SafeAreaView style={styles.container} edges={['bottom']}>
                 <ScrollView
+                    ref={scrollViewRef}
                     style={[styles.scrollContent, { paddingBottom: insets.bottom }]}
                     showsVerticalScrollIndicator={false}
+                    onMomentumScrollEnd={handleScroll}
+                    scrollEventThrottle={16}
                 >
                     <View style={styles.inner}>
                         {/* Verse key badge */}

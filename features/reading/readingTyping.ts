@@ -11,6 +11,8 @@ export interface CreateReadingSessionPayload {
     total_read_seconds?: number;
     daily_target_seconds?: number;
     seconds_read?: number;
+    scroll_y?: number;
+    scroll_x?: number;
 }
 
 export interface UpdateReadingSessionPayload {

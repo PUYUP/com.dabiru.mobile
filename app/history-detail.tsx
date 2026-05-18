@@ -79,7 +79,7 @@ export default function HistoryDetailScreen() {
     };
 
     const childQuery: GetSessionQuery = {
-        from: 1,
+        from: 0,
         to: 50,
         chapter: Number(chapter),
         from_verse_number: Number(from),
