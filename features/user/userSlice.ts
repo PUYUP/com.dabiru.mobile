@@ -62,16 +62,7 @@ const userSlice = createSlice({
                 console.log("Goal created successfully:", payload);
 
                 if (state.goal.data) {
-                    state = {
-                        ...state,
-                        goal: {
-                            ...state.goal,
-                            data: {
-                                ...state.goal.data,
-                                dailyTargetSeconds: meta.arg.amount as number,
-                            }
-                        }
-                    }
+                    state.goal.data.dailyTargetSeconds = meta.arg.amount as number;
                 }
             })
 
@@ -94,16 +85,7 @@ const userSlice = createSlice({
                 state.updatingGoal.error = null;
 
                 if (state.goal.data) {
-                    state = {
-                        ...state,
-                        goal: {
-                            ...state.goal,
-                            data: {
-                                ...state.goal.data,
-                                dailyTargetSeconds: meta.arg.data.amount as number,
-                            }
-                        }
-                    }
+                    state.goal.data.dailyTargetSeconds = meta.arg.data.amount as number;
                 }
             })
             .addCase(updateGoal.rejected, (state, { error }) => {
@@ -162,11 +144,20 @@ const userSlice = createSlice({
             })
 
             // create reading session
-            .addCase(createReadingSession.pending, (state) => {
+            .addCase(createReadingSession.pending, (state, { meta }) => {
                 state.createSession.loading = true;
                 state.createSession.error = null;
             })
-            .addCase(createReadingSession.fulfilled, (state, { payload }) => {
+            .addCase(createReadingSession.fulfilled, (state, { meta, payload }) => {
+                const chapterNumber = meta.arg.chapterNumber;
+                const verseNumber = meta.arg.verseNumber;
+
+                state.latestSession.data = {
+                    ...state.latestSession.data,
+                    chapterNumber: chapterNumber,
+                    verseNumber: verseNumber,
+                };
+
                 state.createSession.loading = false;
                 state.createSession.error = null;
 
@@ -227,27 +218,12 @@ const userSlice = createSlice({
                 const strike = secondsRead / dailyTargetSeconds;
                 
                 if (state.longestStrike.data) {
-                    state.longestStrike = {
-                        ...state.longestStrike,
-                        data: {
-                            ...state.longestStrike.data,
-                            total_strikes: Math.round(state.longestStrike.data.total_strikes + strike),
-                        }
-                    }
+                    state.longestStrike.data.total_strikes = Math.round(state.longestStrike.data.total_strikes + strike);
                 }
 
                 // update goal progress
                 if (state.goal.data) {
-                    state = {
-                        ...state,
-                        goal: {
-                            ...state.goal,
-                            data: {
-                                ...state.goal.data,
-                                secondsRead: (state.goal.data.secondsRead + state.goal.data.manuallyAddedSeconds) + payload.seconds_read,
-                            }
-                        }
-                    }
+                    state.goal.data.secondsRead = (state.goal.data.secondsRead + state.goal.data.manuallyAddedSeconds) + payload.seconds_read;
                 }
             })
     }

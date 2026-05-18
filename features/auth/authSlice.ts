@@ -68,7 +68,7 @@ const authSlice = createSlice({
                 state.user.error = null;
             })
             .addCase(getUserProfile.fulfilled, (state, { payload }) => {
-                console.log("User profile fetched:", payload);
+                console.log("User profile fetched success!");
                 state.user.data = payload;
                 state.user.loading = false;
                 state.user.error = null;

@@ -94,13 +94,10 @@ const configSlice = createSlice({
       })
       .addCase(getConfig.fulfilled, (state, { payload }) => {
         console.log("Fecting config success:", payload);
-        return { 
-          ...state, 
-          preferences: {
-            ...state.preferences,
-            ...payload,
-          }
-        };
+        state.preferences = {
+          ...state.preferences,
+          ...payload,
+        }
       })
 
       // update config
@@ -110,44 +107,36 @@ const configSlice = createSlice({
         const { group, key, value } = meta.arg;
         const g = group as keyof AppConfig;
 
-        return {
-          ...state,
-          preferences: {
-            ...state.preferences,
-            [g]: {
-              ...(state.preferences[g] as Record<string, unknown>),
-              [key]: value,
-            },
-          }
-        };
+        state.preferences = {
+          ...state.preferences,
+          [g]: {
+            ...(state.preferences[g] as Record<string, unknown>),
+            [key]: value,
+          },
+        }
       })
       .addCase(updateConfig.fulfilled, (state, { payload }) => {
         console.log("Config updated successfully:", payload.data);
         const { group, key, value } = payload.data;
         const g = group as keyof AppConfig;
 
-        return {
-          ...state,
-          preferences: {
-            ...state.preferences,
-            [g]: {
-              ...(state.preferences[g] as Record<string, unknown>),
-              [key]: value,
-            },
-          }
-        };
+        state.preferences = {
+          ...state.preferences,
+          [g]: {
+            ...(state.preferences[g] as Record<string, unknown>),
+            [key]: value,
+          },
+        }
       })
       
       // bulk update config
       .addCase(bulkUpdateConfig.pending, (state, { meta }) => {
         console.log('Bulk updating config...');
         const arg = meta.arg;
-        return { 
-          ...state, 
-          preferences: {
-            ...state.preferences,
-            ...arg 
-          }
+
+        state.preferences = {
+          ...state.preferences,
+          ...arg,
         }
       })
       .addCase(bulkUpdateConfig.fulfilled, (state, { payload }) => {

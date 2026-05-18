@@ -20,7 +20,6 @@ import React, { useEffect } from 'react';
 import { AppState } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { PaperProvider } from 'react-native-paper';
-import 'react-native-url-polyfill/auto';
 import { PersistGate } from 'redux-persist/lib/integration/react';
 
 export const unstable_settings = {

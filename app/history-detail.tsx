@@ -287,10 +287,10 @@ export default function HistoryDetailScreen() {
 
                         {(!summary.loading && summary.data || session.data.notes) && (
                             <View style={styles.summaryList}>
-                                {tafsirPoints.map((item: any) => {
+                                {tafsirPoints.map((item: any, index: number) => {
                                     return (
                                         <BulletItem
-                                            key={item}
+                                            key={index}
                                             text={item}
                                             bold={''}
                                             suffix={''}

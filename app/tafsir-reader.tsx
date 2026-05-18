@@ -158,7 +158,17 @@ export default function TafsirReader() {
         if (!chapter || !from || !to) return;
         if (sessionCreated.current) return;
 
-        if (qfLatestSession.data?.chapterNumber != chapter && qfLatestSession.data?.verseNumber != from) {
+        // console.log('qfLatestSession.data?.chapterNumber', qfLatestSession.data?.chapterNumber);
+        // console.log('qfLatestSession.data?.verseNumber', qfLatestSession.data?.verseNumber);
+
+        // console.log('chapter', chapter)
+        // console.log('tooo', to);
+        // console.log('froomm', from)
+
+        // console.log('qfLatestSession.data?.chapterNumber != chapter', qfLatestSession.data?.chapterNumber != chapter)
+        // console.log('qfLatestSession.data?.verseNumber != from', qfLatestSession.data?.verseNumber != from)
+        
+        if (qfLatestSession.data?.chapterNumber != chapter || qfLatestSession.data?.verseNumber != from) {
             sessionCreated.current = true;
 
             dispatch(createReadingSession({
@@ -179,7 +189,7 @@ export default function TafsirReader() {
                 }
             }) as any);
         }
-    }, [qfLatestSession.loading, sbLatestSession.loading]);
+    }, [qfLatestSession.loading, qfLatestSession.data, sbLatestSession.loading]);
 
     useEffect(() => {
         if (sbCreateSession.data) {
