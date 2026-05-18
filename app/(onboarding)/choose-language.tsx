@@ -165,8 +165,8 @@ export default function ChooseLanguageScreen() {
 
         dispatch(bulkUpdateConfig({
             language: { language: selectedConfig.language.iso_code },
-            tafsirs: { selectedTafsirs: [selectedConfig.tafsir?.id] },
-            translations: { selectedTranslations: [selectedConfig.translation?.id] },
+            tafsirs: { selectedTafsirs: [String(selectedConfig.tafsir?.id)] },
+            translations: { selectedTranslations: [String(selectedConfig.translation?.id)] },
         }) as any);
 
         router.navigate('/(tabs)');
