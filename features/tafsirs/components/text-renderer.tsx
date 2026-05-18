@@ -86,8 +86,8 @@ export default function TextRenderer({
     if (!htmlText || !fontsLoaded) return null;
 
     const fontFamily = italic
-        ? 'EBGaramond_400Regular_Italic'
-        : 'EBGaramond_400Regular';
+        ? 'EBGaramond_500Medium_Italic'
+        : 'EBGaramond_500Medium';
 
     return (
         <View style={styles.card}>
@@ -160,7 +160,7 @@ export default function TextRenderer({
                         fontWeight: '700',
                     },
                     em: {
-                        fontFamily: 'EBGaramond_400Regular_Italic',
+                        fontFamily: 'EBGaramond_500Medium_Italic',
                         fontStyle: 'italic',
                     },
                     sup: {
