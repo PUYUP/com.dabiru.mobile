@@ -1,5 +1,6 @@
 import { supabaseGetSessions } from '@/features/reading/readingThunk';
 import { GetSessionQuery } from '@/features/reading/readingTyping';
+import ReadingStats from '@/features/user/components/reading-stats';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux-hooks';
 import { formatSeconds } from '@/utils/format-seconds';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -47,6 +48,7 @@ export default function TabTwoScreen() {
   const dispatch = useAppDispatch();
   const sessions = useAppSelector((state: any) => state.reading.supabaseSessions);
   const chapters = useAppSelector((state: any) => state.reading.chapters);
+  const goal = useAppSelector((state: any) => state.user.goal);
 
   const query: GetSessionQuery = {
     from: 0,
@@ -58,7 +60,7 @@ export default function TabTwoScreen() {
     dispatch(supabaseGetSessions(query) as any);
   }, []);
 
-  if (sessions.loading) {
+  if (sessions.loading || goal.loading) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <Loading />
@@ -76,18 +78,16 @@ export default function TabTwoScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Reading History</Text>
-        <Text style={styles.headerSub}>{sessions.data.length} sessions completed</Text>
-      </View>
-
       <ScrollView
         nestedScrollEnabled={true}
         style={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24 }}
       >
+        {goal.data && (
+          <ReadingStats activity={goal.data} />
+        )}
+
         <View style={styles.listWrap}>
           {sessions.data.map((item: any, index: number) => {
             const surah = chapters.data.find(
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sessionTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#222',
     marginBottom: 2,
