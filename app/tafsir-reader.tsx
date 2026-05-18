@@ -220,7 +220,7 @@ export default function TafsirReader() {
 
     // Auto scroll setelah sbLatestSession loaded
     useEffect(() => {
-        if (sbLatestSession.loading) return;
+        if (sbLatestSession.loading || verses.loading) return;
         if (!sbLatestSession.data?.scroll_y) return;
 
         // Slight delay agar konten sudah render dulu
@@ -230,7 +230,7 @@ export default function TafsirReader() {
                 animated: false,
             });
         }, 300);
-    }, [sbLatestSession.loading]);
+    }, [sbLatestSession.loading, verses.loading]);
 
     // set render verse
     useEffect(() => {
