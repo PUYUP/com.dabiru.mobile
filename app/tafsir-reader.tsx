@@ -229,7 +229,7 @@ export default function TafsirReader() {
                 y: sbLatestSession.data.scroll_y,
                 animated: false,
             });
-        }, 300);
+        }, 500);
     }, [sbLatestSession.loading, verses.loading]);
 
     // set render verse
