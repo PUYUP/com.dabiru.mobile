@@ -87,7 +87,7 @@ const statStyles = StyleSheet.create({
     padding: 10,
   },
   metricLabel: { fontSize: 14, color: '#888', marginBottom: 2 },
-  metricValue: { fontSize: 20, fontWeight: '500', color: '#222' },
+  metricValue: { fontSize: 18, fontWeight: '500', color: '#222' },
   metricSub: { fontSize: 12, color: '#aaa', marginTop: 1 },
   progressCard: {
     backgroundColor: '#fff',

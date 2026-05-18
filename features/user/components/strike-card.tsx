@@ -507,8 +507,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#dcdcdc',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.08)',
   },
   cardContent: {
     paddingHorizontal: 16,
@@ -648,8 +648,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#dcdcdc',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.08)',
   },
   infoLabel: {
     fontSize: 11,
