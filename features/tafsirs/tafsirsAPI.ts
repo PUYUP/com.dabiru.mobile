@@ -6,9 +6,9 @@ import { CreateGoalPayload, GetRangeQuery, GetVerseQuery, GoalResponse, TafsirSu
 // ─── Auth Helper ─────────────────────────────────────────────────────────────
 
 const getAuthenticatedUserId = async (): Promise<string> => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("User is not authenticated");
-    return session.user.id;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("User is not authenticated");
+    return user.id;
 };
 
 // ─── Tafsirs API ──────────────────────────────────────────────────────────────
