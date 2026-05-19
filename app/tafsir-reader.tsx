@@ -373,7 +373,7 @@ export default function TafsirReader() {
     };
 
     const surah = chapters.data.find(
-        (c: any) => c.id == qfLatestSession.data.chapterNumber
+        (c: any) => c.id == qfLatestSession.data?.chapterNumber
     );
 
     const handleScroll = (event: any) => {
@@ -399,7 +399,7 @@ export default function TafsirReader() {
             tafsir_text: selectedText,
             verse_number: Number(from),
             chapter_number: Number(chapter),
-            surah_name: surah.name_simple,
+            surah_name: surah?.name_simple,
             language: preferences.language.language,
         }
 
@@ -437,7 +437,7 @@ export default function TafsirReader() {
                         {/* Verse key badge */}
                         <View style={{ display: 'flex', flexDirection: 'row', gap: 6 }}>
                             <View style={styles.verseBadge}>
-                                <Text style={styles.verseBadgeText}>{surah.name_simple}</Text>
+                                <Text style={styles.verseBadgeText}>{surah?.name_simple}</Text>
                             </View>
 
                             <View style={styles.verseBadge}>
