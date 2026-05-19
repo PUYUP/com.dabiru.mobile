@@ -249,9 +249,20 @@ export default function TafsirReader() {
         return <VerseUndefined />;
     }
 
+    const seen = new Set<string>();
     const tafsirText = verses.data && verses.data.length > 0
-        ? verses.data.map((v: any) => v.tafsirs?.map((item: any) => item.text).join(' ')).join(' ')
-        : null;
+    ? verses.data.map((v: any) =>
+        v.tafsirs
+            ?.filter((item: any) => {
+            const fingerprint = item.text?.slice(0, 100) ?? '';
+            if (seen.has(fingerprint)) return false;
+            seen.add(fingerprint);
+            return true;
+            })
+            .map((item: any) => item.text)
+            .join(' ')
+        ).join(' ')
+    : null;
 
     const translationText = verses.data && verses.data.length > 0
         ? verses.data.map((v: any) => v.translations?.map((item: any) => item.text).join(' ')).join(' ')

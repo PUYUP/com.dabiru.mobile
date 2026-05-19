@@ -120,7 +120,7 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
         setLoadingStep('verse');
 
         if (sbLatestSession.data) {
-            const { status, current_chapter_number, to_verse_number, total_read_seconds } = sbLatestSession.data;
+            const { status, current_chapter_number, from_verse_number, to_verse_number, total_read_seconds } = sbLatestSession.data;
             const ended = status === 'ended';
 
             setIsEnded(ended);
@@ -136,7 +136,7 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
                 dispatchNextVerse(nextCh, nextVs);
             } else {
                 // Session masih berlangsung → lanjutkan verse yang sama
-                dispatchNextVerse(current_chapter_number, to_verse_number);
+                dispatchNextVerse(current_chapter_number, from_verse_number);
             }
         } else {
             // Tidak ada SB session → fallback ke verseKey prop (last resort)
