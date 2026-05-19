@@ -16,8 +16,8 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { ActivityIndicator } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-const PRIMARY = "#258c91";
-const PRIMARY_LIGHT = "#e8f5f5";
+const PRIMARY = "#5E5545";
+const PRIMARY_LIGHT = "#ECE7DC";
 
 const FONT_SIZE_MIN = 18;
 const FONT_SIZE_MAX = 32;
@@ -346,6 +346,9 @@ export default function TafsirReader() {
 
             <Stack.Screen
                 options={{
+                    headerStyle: {
+                        backgroundColor: '#F6F1E7',
+                    },
                     headerRight: () => (
                         <FontSizeControl
                             fontSize={fontSize}
@@ -418,7 +421,7 @@ export default function TafsirReader() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fafaf8',
+        backgroundColor: '#F6F1E7',
     },
     scrollContent: {
         flex: 1,
@@ -564,7 +567,9 @@ const styles = StyleSheet.create({
 
     // Timer
     timerWrap: {
-        borderTopWidth: 0.5,
-        borderTopColor: 'rgba(0,0,0,0.08)',
+        borderTopWidth: 1,
+        borderTopColor: '#ECE7DC',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
     },
 });

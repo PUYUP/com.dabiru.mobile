@@ -137,6 +137,7 @@ export default function TextRenderer({
                     lineHeight: fontSize * 1.65,
                     fontStyle: italic ? 'italic' : 'normal',
                     fontFamily,
+                    color: '#222222',
                 }}
                 tagsStyles={{
                     h2: {

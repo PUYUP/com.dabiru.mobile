@@ -30,7 +30,7 @@ import {
 	Text,
 	View,
 } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Button, useTheme } from 'react-native-paper';
 
 // ─────────────────────────────────────────────────────────────
 // TYPES
@@ -76,6 +76,7 @@ const ReadingTimer: React.FC<ReadingTimerProps> = ({
     verseData = null,
 	startFromSeconds = 0,
 }) => {
+	const theme = useTheme();
 	const [seconds, setSeconds]     = useState(startFromSeconds);
 	const [isRunning, setIsRunning] = useState(false);
 
@@ -297,7 +298,7 @@ const ReadingTimer: React.FC<ReadingTimerProps> = ({
 
 			<View style={styles.action}>
 				{seconds > 0 && (
-					<Button onPress={handleReset} textColor='#c10'>
+					<Button onPress={handleReset} textColor={theme.colors.primary}>
 						Finish
 					</Button>
 				)}
@@ -320,13 +321,9 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'space-between',
 		gap: 8,
-		paddingHorizontal: 16,
-		paddingVertical: 12,
-		borderTopWidth: 2,
-		borderTopColor: '#e5e5e5',
 	},
 	time: {
-		fontSize: 20,
+		fontSize: 17,
 		fontWeight: '700',
 		fontVariant: ['tabular-nums'],
 		minWidth: 52,
