@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getAllChaptersAPI, supabaseCreateReadingSessionAPI, supabaseGetLatestEndedSessionAPI, supabaseGetLatestSessionAPI, supabaseGetSessionAPI, supabaseGetTafsirsAPI, supabaseUpdateReadingSessionAPI } from "./readingAPI";
-import { CreateReadingSessionPayload, GetLatestSessionQuery, GetSessionQuery, GetTafsirQuery, UpdateReadingSessionPayload } from "./readingTyping";
+import { getAllChaptersAPI, pagesLookupAPI, supabaseCreateReadingSessionAPI, supabaseGetLatestEndedSessionAPI, supabaseGetLatestSessionAPI, supabaseGetSessionAPI, supabaseGetTafsirsAPI, supabaseUpdateReadingSessionAPI } from "./readingAPI";
+import { CreateReadingSessionPayload, GetLatestSessionQuery, GetSessionQuery, GetTafsirQuery, PagesLookupQuery, UpdateReadingSessionPayload } from "./readingTyping";
 
 // create session
 export const supabaseCreateReadingSession = createAsyncThunk(
@@ -79,5 +79,13 @@ export const supabaseGetNextVerse = createAsyncThunk(
   'reading/supabaseGetNextVerse',
   async (payload: GetTafsirQuery) => {
     return await supabaseGetTafsirsAPI(payload);
+  }
+);
+
+// pages lookup
+export const pagesLookup = createAsyncThunk(
+  'reading/pagesLookup',
+  async (payload: PagesLookupQuery) => {
+    return await pagesLookupAPI(payload);
   }
 );

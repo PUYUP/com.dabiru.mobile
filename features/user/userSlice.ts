@@ -9,6 +9,7 @@ import {
     getGoal,
     getLatestSession,
     getLongestStrike,
+    getReadingStats,
     updateGoal
 } from "./userThunks";
 import { GoalInfo } from "./userTyping";
@@ -45,6 +46,11 @@ const initialState = {
         error: null as SerializedError | null,
     },
     failedStrike: {
+        data: null as any | null,
+        loading: false,
+        error: null as SerializedError | null,
+    },
+    stats: {
         data: null as any | null,
         loading: false,
         error: null as SerializedError | null,
@@ -209,6 +215,23 @@ const userSlice = createSlice({
             .addCase(getFailedStrike.rejected, (state, { error }) => {
                 state.failedStrike.loading = false;
                 state.failedStrike.error = error;
+            })
+
+            // get reading stats
+            .addCase(getReadingStats.pending, (state) => {
+                console.log('Get Reading Stats');
+                state.stats.loading = true;
+                state.stats.error = null;
+            })
+            .addCase(getReadingStats.fulfilled, (state, { payload }) => {
+                console.log('Get Reading Stats success:', payload);
+                state.stats.loading = false;
+                state.stats.error = null;
+                state.stats.data = payload;
+            })
+            .addCase(getReadingStats.rejected, (state, { error }) => {
+                state.stats.loading = false;
+                state.stats.error = error;
             })
 
             .addCase(supabaseCreateReadingSession.fulfilled, (state, { payload }) => {

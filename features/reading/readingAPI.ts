@@ -1,6 +1,6 @@
 import api from "@/services/apiClient";
 import { supabase } from "@/services/supabase";
-import { CreateReadingSessionPayload, GetLatestSessionQuery, GetSessionQuery, GetTafsirQuery, UpdateReadingSessionPayload } from "./readingTyping";
+import { CreateReadingSessionPayload, GetLatestSessionQuery, GetSessionQuery, GetTafsirQuery, PagesLookupQuery, UpdateReadingSessionPayload } from "./readingTyping";
 
 // ─── Retry Helper ────────────────────────────────────────────────────────────
 
@@ -220,4 +220,23 @@ export const supabaseGetTafsirsAPI = async (query: GetTafsirQuery) => {
 
         return data[0];
     });
+};
+
+// pages lookup
+export const pagesLookupAPI = async (query: PagesLookupQuery) => {
+    try {
+        const [lookupRes, pagesRes] = await Promise.all([
+            api.get(`/content/api/v4/pages/lookup`, { params: query }),
+            api.get(`/content/api/v4/pages`, { params: query }),
+        ]);
+
+        return {
+            total: pagesRes.data?.pages?.length ?? 0,
+            lookup: lookupRes.data,
+            pages: pagesRes.data?.pages ?? [],
+        };
+    } catch (error: any) {
+        console.log("Error pages lookup:", error.response?.data);
+        throw error;
+    }
 };

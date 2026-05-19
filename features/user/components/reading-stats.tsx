@@ -1,15 +1,17 @@
 import { StyleSheet, Text, View } from "react-native";
 
 const PRIMARY = "#258c91";
+const TOTAL_VERSE = 6236;
 
-export default function ReadingStats({ activity }: { activity: any }) {
-  if (!activity) return null;
+export default function ReadingStats({ stats, goal, pagesPct }: { stats: any, goal: any, pagesPct: string }) {
+  if (!stats) return null;
 
-  const totalSeconds = (activity.manuallyAddedSeconds ?? 0) + (activity.secondsRead ?? 0);
-  const targetSeconds = activity.dailyTargetSeconds ?? 600;
-  const goalPct = Math.min(Math.round((totalSeconds / targetSeconds) * 100), 100);
-  const quranPct = parseFloat((activity.progress ?? 0).toFixed(2));
-  const remaining = Math.max(targetSeconds - totalSeconds, 0);
+  const totalSeconds = (stats.total_read_seconds ?? 0);
+  const targetSeconds = goal.dailyTargetSeconds ?? 600;
+  const goalTotalSeconds = (goal.manuallyAddedSeconds ?? 0) + (goal.secondsRead ?? 0);
+  const goalPct = Math.min(Math.round((goalTotalSeconds / targetSeconds) * 100), 100);
+  const quranPct = (stats.total_unique_verses / TOTAL_VERSE) * 100;
+  const remaining = Math.max(targetSeconds - goalTotalSeconds, 0);
 
   const fmtSeconds = (s: number) => {
     const m = Math.floor(s / 60);
@@ -26,22 +28,22 @@ export default function ReadingStats({ activity }: { activity: any }) {
         <View style={statStyles.metric}>
           <Text style={statStyles.metricLabel}>Time read</Text>
           <Text style={[statStyles.metricValue, { color: PRIMARY }]}>{fmtSeconds(totalSeconds)}</Text>
-          <Text style={statStyles.metricSub}>of {fmtSeconds(targetSeconds)}</Text>
+          <Text style={statStyles.metricSub}>since start</Text>
         </View>
         <View style={statStyles.metric}>
           <Text style={statStyles.metricLabel}>Verses</Text>
-          <Text style={statStyles.metricValue}>{activity.versesRead ?? 0}</Text>
+          <Text style={statStyles.metricValue}>{stats.total_unique_verses ?? 0}</Text>
           <Text style={statStyles.metricSub}>verses read</Text>
         </View>
         <View style={statStyles.metric}>
           <Text style={statStyles.metricLabel}>Pages</Text>
-          <Text style={statStyles.metricValue}>{(activity.pagesRead ?? 0).toFixed(2)}</Text>
+          <Text style={statStyles.metricValue}>{pagesPct}%</Text>
           <Text style={statStyles.metricSub}>of Al-Qur'an</Text>
         </View>
         <View style={statStyles.metric}>
           <Text style={statStyles.metricLabel}>Sessions</Text>
-          <Text style={statStyles.metricValue}>{activity.ranges?.length ?? 0}</Text>
-          <Text style={statStyles.metricSub}>ranges today</Text>
+          <Text style={statStyles.metricValue}>{stats.total_unique_sessions ?? 0}</Text>
+          <Text style={statStyles.metricSub}>has done</Text>
         </View>
       </View>
 
@@ -63,7 +65,7 @@ export default function ReadingStats({ activity }: { activity: any }) {
       <View style={statStyles.progressCard}>
         <View style={statStyles.progressHeader}>
           <Text style={statStyles.progressLabel}>Al-Qur'an progress</Text>
-          <Text style={statStyles.progressPct}>{quranPct}%</Text>
+          <Text style={statStyles.progressPct}>{quranPct.toFixed(2)}%</Text>
         </View>
         <View style={statStyles.track}>
           <View style={[statStyles.fill, { width: `${Math.min(quranPct, 100)}%`, backgroundColor: '#EF9F27' }]} />

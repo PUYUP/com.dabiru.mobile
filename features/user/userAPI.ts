@@ -2,7 +2,7 @@ import { MUSHAF_ID } from "@/constants/oauth";
 import api from "@/services/apiClient";
 import { supabase } from "@/services/supabase";
 import { withRetry } from "@/utils/retry-helper";
-import { ActivityDaysQuery, ActivityPayload, FailedStrikeDaysResult, GenerateGoalPayload, GoalInfo, GoalPayload, LongestStrike } from "./userTyping";
+import { ActivityDaysQuery, ActivityPayload, FailedStrikeDaysResult, GenerateGoalPayload, GoalInfo, GoalPayload, LongestStrike, StatsResult } from "./userTyping";
 
 // ─── Auth Helper ─────────────────────────────────────────────────────────────
 
@@ -180,6 +180,24 @@ export const getFailedStrikeAPI = async (): Promise<FailedStrikeDaysResult> => {
         
         if (error) {
             console.log("Error get failed strike:", error);
+            throw error;
+        }
+
+        return data;
+    });
+};
+
+export const getReadingStatsAPI = async (): Promise<StatsResult> => {
+    const userId = await getAuthenticatedUserId();
+
+    return withRetry(async () => {
+        const { data, error } = await supabase
+            .rpc('get_reading_stats', {
+                p_user_id: userId,
+            });
+        
+        if (error) {
+            console.log("Error get stats:", error);
             throw error;
         }
 

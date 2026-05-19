@@ -32,6 +32,8 @@ export interface GetSessionQuery {
     chapter?: number;
     from_verse_number?: number;
     to_verse_number?: number;
+    order_by?: string;
+    sort?: 'asc' | 'desc';
 }
 
 export interface GetTafsirQuery {
@@ -39,4 +41,11 @@ export interface GetTafsirQuery {
     to?: number;
     chapter?: number;
     verse_start?: number;
+}
+
+export interface PagesLookupQuery {
+    mushaf: number;
+    chapter_number: number;
+    from: string;
+    to: string;
 }

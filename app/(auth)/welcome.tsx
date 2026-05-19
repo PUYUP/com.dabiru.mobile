@@ -174,7 +174,8 @@ const Index = () => {
                 <View style={{ marginTop: 'auto', paddingBottom: insets.bottom + 16, paddingHorizontal: 40 }}>
                     <Button 
                         onPress={() => continueHandler()}
-                        mode="contained">
+                        mode="contained"
+                        contentStyle={{ paddingVertical: 6 }}>
                         <Text>Continue with Quran.Foundation</Text>
                     </Button>
                 </View>

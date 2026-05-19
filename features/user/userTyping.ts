@@ -75,3 +75,9 @@ export interface FailedStrikeDaysResult {
   offset:            number;
   results:           FailedStrikeDay[];
 }
+
+export interface StatsResult {
+    total_read_seconds: number;
+    total_unique_verses: number;
+    total_unique_sessions: number;
+}

@@ -1,13 +1,15 @@
-import { supabaseGetSessions } from '@/features/reading/readingThunk';
+import { MUSHAF_ID } from '@/constants/oauth';
+import { pagesLookup, supabaseGetSessions } from '@/features/reading/readingThunk';
 import { GetSessionQuery } from '@/features/reading/readingTyping';
 import ReadingStats from '@/features/user/components/reading-stats';
+import { getGoal, getReadingStats } from '@/features/user/userThunks';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux-hooks';
 import { formatSeconds } from '@/utils/format-seconds';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -49,18 +51,52 @@ export default function TabTwoScreen() {
   const sessions = useAppSelector((state: any) => state.reading.supabaseSessions);
   const chapters = useAppSelector((state: any) => state.reading.chapters);
   const goal = useAppSelector((state: any) => state.user.goal);
+  const stats = useAppSelector((state: any) => state.user.stats);
+  const pages = useAppSelector((state: any) => state.reading.pagesLookup);
+  const [pagesPct, setPagesPct] = useState<string>('0');
 
   const query: GetSessionQuery = {
     from: 0,
     to: 50,
     status: 'ended',
+    sort: 'asc',
+    order_by: 'created_at'
   };
 
   useEffect(() => {
     dispatch(supabaseGetSessions(query) as any);
+    dispatch(getReadingStats() as any);
+    dispatch(getGoal() as any);
   }, []);
 
-  if (sessions.loading || goal.loading) {
+  useEffect(() => {
+    if (sessions.loading) return;
+    if (sessions.data.length === 0) return;
+
+    const currentChapter = sessions.data?.[0]?.current_chapter_number ?? 0;
+    const fromVerse = sessions.data?.[0]?.from_verse_number ?? 0;
+    const toVerse = sessions.data?.[0]?.to_verse_number ?? 0;
+
+    dispatch(pagesLookup({
+      mushaf: MUSHAF_ID,
+      chapter_number: currentChapter,
+      from: currentChapter + ':' + fromVerse,
+      to: currentChapter + ':' + toVerse,
+    }) as any);
+  }, [sessions]);
+
+  useEffect(() => {
+    if (pages.loading) return;
+    if (!pages.data) return;
+
+    const totalPages = pages.data.total;
+    const currentPage = Number(Object.keys(pages.data.lookup.pages)[0]);
+    const pct = ((currentPage / totalPages) * 100).toFixed(2);
+
+    setPagesPct(pct);
+  }, [pages]);
+ 
+  if (sessions.loading || goal.loading || stats.loading || pages.loading) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <Loading />
@@ -68,7 +104,7 @@ export default function TabTwoScreen() {
     );
   }
 
-  if (!sessions.data || sessions.data.length === 0) {
+  if (!sessions.data || sessions.data.length === 0 || !stats.data || !pages.data) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <EmptyState />
@@ -84,8 +120,8 @@ export default function TabTwoScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24 }}
       >
-        {goal.data && (
-          <ReadingStats activity={goal.data} />
+        {(stats.data && goal.data) && (
+          <ReadingStats pagesPct={pagesPct} stats={stats.data} goal={goal.data} />
         )}
 
         <View style={styles.listWrap}>

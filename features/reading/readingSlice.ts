@@ -1,6 +1,7 @@
 import { createSlice, SerializedError } from "@reduxjs/toolkit";
 import {
     getAllChapters,
+    pagesLookup,
     supabaseCreateReadingSession,
     supabaseGetChildSessions,
     supabaseGetLatestEndedSession,
@@ -59,6 +60,11 @@ const initialState = {
         loading: false,
         error: null as SerializedError | null,
     },
+    pagesLookup: {
+        data: null as { total: any; lookup: any; pages: any } | null,
+        loading: false,
+        error: null as SerializedError | null,
+    }
 }
 
 const readingSlice = createSlice({
@@ -234,6 +240,23 @@ const readingSlice = createSlice({
         .addCase(supabaseGetNextVerse.rejected, (state, { error }) => {
             state.supabaseNextVerse.loading = false;
             state.supabaseNextVerse.error = error;
+        })
+
+        // pages lookup
+        .addCase(pagesLookup.pending, (state) => {
+            console.log('Getting pagesLookup...');
+            state.pagesLookup.loading = true;
+            state.pagesLookup.error = null;
+        })
+        .addCase(pagesLookup.fulfilled, (state, { payload }) => {
+            console.log('Getting pagesLookup success!');
+            state.pagesLookup.loading = false;
+            state.pagesLookup.error = null;
+            state.pagesLookup.data = payload;
+        })
+        .addCase(pagesLookup.rejected, (state, { error }) => {
+            state.pagesLookup.loading = false;
+            state.pagesLookup.error = error;
         })
     }
 });
