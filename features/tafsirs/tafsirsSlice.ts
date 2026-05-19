@@ -190,7 +190,7 @@ const tafsirsSlice = createSlice({
                 state.addNotes.error = null;
             })
             .addCase(addNotes.fulfilled, (state, { payload }) => {
-                console.log('addNotes tafsirs success!', payload);
+                console.log('addNotes tafsirs success!');
                 state.addNotes.data = payload;
                 state.addNotes.loading = false;
                 state.addNotes.error = null;
