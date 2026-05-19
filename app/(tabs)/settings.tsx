@@ -93,7 +93,7 @@ export default function TabTwoScreen() {
             )
             : user.data ? (
                 <View style={styles.profileWrapper}>
-                  <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Image src={user.data.avatarUrls.large} style={styles.avatar} />
                     <View>
                       <Text style={styles.name}>{user.data.firstName} {user.data.lastName}</Text>
@@ -101,7 +101,11 @@ export default function TabTwoScreen() {
                     </View>
                   </View>
 
-                  <Button mode="contained" onPress={logout}>
+                  <Button 
+                    mode="contained" 
+                    onPress={logout}
+                    labelStyle={{ fontSize: 12 }}
+                  >
                     Logout
                   </Button>
                 </View>
@@ -193,14 +197,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 60,
+    width: 40,
+    height: 40,
+    borderRadius: 40,
   },
   name: {
-    fontSize: 18,
+    fontSize: 16,
   },
   userName: {
-    fontSize: 15,
+    fontSize: 12,
   },
 });

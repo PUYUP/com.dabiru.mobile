@@ -199,6 +199,7 @@ export default function ChooseLanguageScreen() {
                     disabled={!selectedConfig}
                     onPress={chooseHandler}
                     style={styles.continueButton}
+                    contentStyle={{ paddingVertical: 6 }}
                 >
                     <Text>Continue</Text>
                 </Button>

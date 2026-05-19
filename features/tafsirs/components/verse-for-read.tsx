@@ -53,6 +53,7 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
 
     // Dipakai untuk deteksi remount (close & reopen app)
     const initKey = useRef(0);
+    const hasInitialized = useRef(false);
 
     const surahVerseCounts = useMemo<Record<number, number>>(() => {
         const counts: Record<number, number> = {};
@@ -85,6 +86,7 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
     // bahkan jika redux state sudah ada dari sesi sebelumnya.
     useEffect(() => {
         initKey.current += 1;
+        hasInitialized.current = false;
         setLoadingStep('session');
         dispatch(getLatestSession() as any);
         dispatch(getAllChapters() as any);
@@ -113,6 +115,7 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
     // ─── Step 2 → 3: SB session selesai ─────────────────────────────────────
     useEffect(() => {
         if (sbLatestSession.loading) return;
+        if (hasInitialized.current) return;
 
         setLoadingStep('verse');
 
@@ -139,11 +142,16 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
             // Tidak ada SB session → fallback ke verseKey prop (last resort)
             fallbackToVerseKeyProp();
         }
+
+        if (sbLatestSession.data) {
+            hasInitialized.current = true;
+        }
     }, [sbLatestSession.loading, sbLatestSession.data]);
 
     // ─── Sync isEnded & secondsRead jika sbLatestSession.data berubah ───────
     // (misal: update real-time dari luar komponen)
     useEffect(() => {
+        if (!hasInitialized.current) return;
         if (!sbLatestSession.data) return;
         setIsEnded(sbLatestSession.data.status === 'ended');
         setSecondsRead(sbLatestSession.data.total_read_seconds ?? 0);

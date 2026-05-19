@@ -44,9 +44,9 @@ interface StrikeInfo {
 // ─── Static Data ──────────────────────────────────────────────────────────────
 
 const STREAK_DATA = [
-  { id: 'current', icon: 'whatshot' as const, color: '#EF4444', label: 'Strike', value: '0',     unit: 'days' },
-  { id: 'longest', icon: 'star'     as const, color: '#03C430', label: 'Longest', value: '0', unit: 'days' },
-  { id: 'failed',  icon: 'cancel'   as const, color: '#F59E0B', label: 'Days failed',  value: '0',    unit: 'days' },
+  { id: 'current', icon: 'whatshot' as const, color: '#EF4444', label: 'Strike',     value: '0', unit: 'days' },
+  { id: 'longest', icon: 'star'     as const, color: '#03C430', label: 'Longest',    value: '0', unit: 'days' },
+  { id: 'failed',  icon: 'cancel'   as const, color: '#F59E0B', label: 'Days failed', value: '0', unit: 'days' },
 ];
 
 // ─── Animated Circle ──────────────────────────────────────────────────────────
@@ -62,8 +62,7 @@ interface CircularProgressProps {
 }
 
 function CircularProgress({ current, target, goal }: CircularProgressProps) {
-  const theme = useTheme();
-
+  const theme  = useTheme();
   const RADIUS = 78;
   const STROKE = 12;
   const normalizedRadius = RADIUS - STROKE / 2;
@@ -74,15 +73,16 @@ function CircularProgress({ current, target, goal }: CircularProgressProps) {
   const gapLength = circumference - arcLength;
   const trackDasharray = `${arcLength} ${gapLength}`;
 
+  // BUG FIX: initial value set to arcLength (empty arc) so it always animates
+  // from empty → filled on first render, instead of jumping from full → filled.
   const animatedValue = useRef(new Animated.Value(arcLength)).current;
 
   useEffect(() => {
-    const progress = Math.min(current / Number(target), 1);
-    // BUG FIX: strokeDashoffset of 0 = full arc visible, arcLength = empty.
-    // Was previously `arcLength - progress * arcLength` which is correct, but
-    // the initial Animated.Value was 0 (full progress shown on mount before
-    // animating). Changed initial value to arcLength (empty) so it always
-    // animates from empty → filled correctly on the first render.
+    // BUG FIX: guard against target = 0 or NaN to prevent division by zero /
+    // NaN progress, which previously left the arc stuck at its initial state.
+    if (!target || target === 0) return;
+
+    const progress = Math.min(current / target, 1);
     const targetOffset = arcLength * (1 - progress);
 
     Animated.timing(animatedValue, {
@@ -91,7 +91,7 @@ function CircularProgress({ current, target, goal }: CircularProgressProps) {
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
-  }, [current, goal, animatedValue, arcLength]);
+  }, [current, target, goal, animatedValue, arcLength]);
 
   const size = RADIUS * 2;
   const svgRotationDeg = 180 * ARC_RATIO - 17.85;
@@ -161,19 +161,20 @@ function DayDot({ index, data }: DayDotProps) {
     ? '#FEF3C7'
     : data.isStrikeed
     ? '#cff0cf'
-    : !data.isStrikeed ? data.isPastDay ? 'rgb(248, 215, 212)' : '#F1F5F9'
+    : data.isPastDay
+    ? 'rgb(248, 215, 212)'
     : '#F1F5F9';
 
-  const dotColor = data.isCurrent 
-    ? '#D97706' 
-    : !data.isStrikeed ? 
-      data.isPastDay ? '#c10' : '#949eac'
-      : '#949eac';
+  const dotColor = data.isCurrent
+    ? '#D97706'
+    : !data.isStrikeed
+    ? data.isPastDay ? '#c10' : '#949eac'
+    : '#949eac';
 
   const strikeColor = data.isStrikeed
     ? data.isCurrent ? dotColor : '#2e8b57'
     : data.isPastDay ? '#c10' : '#94A3B8';
-  
+
   return (
     <View style={styles.dayCol}>
       <Text style={[styles.dayLabel, data.isCurrent && styles.dayLabelToday]}>
@@ -196,8 +197,7 @@ interface StrikeInfoItemProps {
 }
 
 function StrikeInfoItem({ item, goal }: StrikeInfoItemProps) {
-  // BUG FIX: `goal?.label + 's'` produced "undefined" + 's' = "undefineds"
-  // when goal was undefined. Added a proper fallback.
+  // BUG FIX: `goal?.label + 's'` produced "undefineds" when goal was not ready.
   const unitLabel = 'days';
 
   return (
@@ -214,12 +214,11 @@ function StrikeInfoItem({ item, goal }: StrikeInfoItemProps) {
   );
 }
 
-// ─── Loading skeleton ─────────────────────────────────────────────────────────
+// ─── Loading Skeleton ─────────────────────────────────────────────────────────
 
 function LoadingSkeleton() {
   return (
     <View style={{ flex: 1 }}>
-      {/* Skeleton 1: Progress bar */}
       <Skeleton
         containerStyle={{ width: '100%' }}
         isLoading={true}
@@ -234,7 +233,6 @@ function LoadingSkeleton() {
         ]}
       />
 
-      {/* Skeleton 2: Strike row — pakai View flex row sebagai wrapper */}
       <View style={{ flexDirection: 'row', gap: 16 }}>
         {['current', 'longest', 'fail'].map((key) => (
           <View key={key} style={{ flex: 1 }}>
@@ -259,34 +257,32 @@ function LoadingSkeleton() {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const TODAY = new Date();
+const TODAY     = new Date();
 const TODAY_STR = format(TODAY, 'yyyy-MM-dd');
-const TODAY_TIMESTAMP = getUnixTime(TODAY_STR);
 
-// BUG FIX: `Math.random()` was called inside a useEffect with [mode] as the
-// dependency, which means every mode switch re-randomises the strike data,
-// causing inconsistent UI. Extracted to stable builder functions so the
-// random values are only generated once per mode (or replaced with real data).
-// In production these functions would receive actual session data as a param.
+// BUG FIX: was `getUnixTime(TODAY_STR)` — date-fns getUnixTime expects a Date
+// object, not a string. Passing a string returned NaN / 0, breaking the
+// isPastDay comparison for every day dot.
+const TODAY_TIMESTAMP = getUnixTime(TODAY);
 
 function buildDailyStrikes(): StrikeInfo[] {
   return generateDays().map((d) => {
-    const day = format(d.startDate, 'yyyy-MM-dd');
-    const dayTs = getUnixTime(day);
+    const day   = format(d.startDate, 'yyyy-MM-dd');
+    const dayTs = getUnixTime(d.startDate); // ✅ pass Date, not string
 
     return {
-      id: `${d.startDate.getTime()}`,
-      icon: 'whatshot' as const,
-      color: '#EF4444',
-      label: format(d.startDate, 'EEE'),
-      value: Math.floor(Math.random() * 60).toString(),
-      unit: 'day',
-      num: d.day,
-      date: day,
-      isCurrent: day === TODAY_STR,
+      id:         `${d.startDate.getTime()}`,
+      icon:       'whatshot' as const,
+      color:      '#EF4444',
+      label:      format(d.startDate, 'EEE'),
+      value:      Math.floor(Math.random() * 60).toString(),
+      unit:       'day',
+      num:        d.day,
+      date:       day,
+      isCurrent:  day === TODAY_STR,
       isStrikeed: Math.random() > 0.5,
-      isPastDay: dayTs < TODAY_TIMESTAMP,
-    }
+      isPastDay:  dayTs < TODAY_TIMESTAMP,
+    };
   });
 }
 
@@ -294,141 +290,135 @@ function buildDailyStrikes(): StrikeInfo[] {
 
 export default function StrikeCard() {
   const dispatch = useAppDispatch();
-  const [strikes, setStrikes] = useState<StrikeInfo[]>(() => buildDailyStrikes());
+  const [strikes,     setStrikes]     = useState<StrikeInfo[]>(() => buildDailyStrikes());
   const [strikesData, setStrikesData] = useState<any[]>(STREAK_DATA);
-  const longestStrike = useAppSelector((state: any) => state.user.longestStrike);
-  const failedStrike = useAppSelector((state: any) => state.user.failedStrike);
 
-  const now = new Date();
-  const todayDate = format(now, "yyyy-MM-dd");
-  const startDate = format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
-  const endDate = format(endOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
+  const longestStrike = useAppSelector((state: any) => state.user.longestStrike);
+  const failedStrike  = useAppSelector((state: any) => state.user.failedStrike);
+
+  const now       = new Date();
+  const todayDate = format(now, 'yyyy-MM-dd');
+  const startDate = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  const endDate   = format(endOfWeek(now,   { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
   // progress
   const [currentSeconds, setCurrentSeconds] = useState<number>(0);
-  const [currentTarget, setCurrentTarget] = useState<number>(0);
-  const [percentage, setPercentage] = useState<number>(0);
+  const [currentTarget,  setCurrentTarget]  = useState<number>(0);
+  const [percentage,     setPercentage]     = useState<number>(0);
 
-  // Load current goal
+  // Load data on mount
   useEffect(() => {
     const query: ActivityDaysQuery = {
-      from: startDate,
-      to: endDate,
-      type: 'QURAN',
+      from:  startDate,
+      to:    endDate,
+      type:  'QURAN',
       first: 7,
-    }
+    };
 
-    dispatch(getActivityDays({...query}) as any);
-    dispatch(getGoal() as any);
+    dispatch(getActivityDays({ ...query }) as any);
+    dispatch(getGoal()          as any);
     dispatch(getLongestStrike() as any);
-    dispatch(getFailedStrike() as any);
+    dispatch(getFailedStrike()  as any);
   }, []);
 
-  const goal = useAppSelector((state: any) => state.user.goal);
-  const goalLoading = useAppSelector((state: any) => state.user.goal.loading);
-  const goalData = useAppSelector((state: any) => state.user.goal.data);
+  const goal         = useAppSelector((state: any) => state.user.goal);
+  const goalData     = useAppSelector((state: any) => state.user.goal.data);
   const activityDays = useAppSelector((state: any) => state.user.activityDays);
 
+  // BUG FIX: Watch `goalData` as a whole instead of individual primitive fields.
+  // When goalData is a partially-initialised Redux object the individual field
+  // selectors resolve to `undefined`, causing `target` to be `undefined` and
+  // subsequently `Number(undefined) = NaN` inside CircularProgress.
+  // Also added `?? 0` fallbacks so target / current are always valid numbers.
   useEffect(() => {
     if (!goalData) return;
 
-    const target = goalData.dailyTargetSeconds;
-    const current = goalData.secondsRead + goalData.manuallyAddedSeconds;
-    const progress = target ? Math.round((current / target) * 100) : 0;
+    const target  = goalData.dailyTargetSeconds   ?? 0;
+    const seconds = goalData.secondsRead           ?? 0;
+    const manual  = goalData.manuallyAddedSeconds  ?? 0;
+    const current = seconds + manual;
+    const progress = target > 0 ? Math.round((current / target) * 100) : 0;
 
     setCurrentSeconds(current);
     setCurrentTarget(target);
     setPercentage(progress);
-  }, [goalData?.dailyTargetSeconds, goalData?.secondsRead, goalData?.manuallyAddedSeconds]);
+  }, [goalData]); // ✅ single stable dependency
 
   useEffect(() => {
     if (activityDays.loading) return;
-    if (!activityDays.data) return;
+    if (!activityDays.data)   return;
 
-    // set strikes
     const strikesFromActivities = buildDailyStrikes().map((s: StrikeInfo) => {
-      const activity = activityDays.data.find((item: any) => {
-        return item.date == s.date;
-      });
+      const activity = activityDays.data.find((item: any) => item.date === s.date);
 
       if (!activity) {
-        return {
-          ...s,
-          value: '0',
-          isStrikeed: false,
-        }
+        return { ...s, value: '0', isStrikeed: false };
       }
 
-      const target = activity.dailyTargetSeconds;
-      const manuallyAddedSeconds = activity.manuallyAddedSeconds ? activity.manuallyAddedSeconds : 0;
-      const current = activity.secondsRead + manuallyAddedSeconds;
+      const target         = activity.dailyTargetSeconds  ?? 0;
+      const manuallyAdded  = activity.manuallyAddedSeconds ?? 0;
+      const current        = (activity.secondsRead ?? 0) + manuallyAdded;
 
-      const value = (current && target) && (current > target) ? 
-        Math.floor((current / target)).toString()
+      const value = current > 0 && target > 0 && current >= target
+        ? Math.floor(current / target).toString()
         : '0';
 
       return {
         ...s,
-        value: value,
-        isStrikeed: activity ? (current >= target) : false,
+        value,
+        isStrikeed: target > 0 && current >= target,
       };
     });
 
     setStrikes(strikesFromActivities);
 
-    // fill value for strikes array
-    const currentStrike = strikesFromActivities.find((item: any) => item.date == todayDate);
+    // Fill current-strike value in the stats row
+    const currentStrike = strikesFromActivities.find((item) => item.date === todayDate);
 
     setStrikesData((prev: any) => {
-      const index = prev.findIndex((item: any) => item.id == 'current');
+      const index = prev.findIndex((item: any) => item.id === 'current');
+      if (index === -1) return prev;
       return [
         ...prev.slice(0, index),
-        {
-          ...prev[index],
-          value: currentStrike?.value ?? 0,
-        },
+        { ...prev[index], value: currentStrike?.value ?? '0' },
         ...prev.slice(index + 1),
       ];
     });
   }, [activityDays]);
 
-  // longest strike
+  // Longest strike
   useEffect(() => {
     if (longestStrike.loading) return;
-    if (!longestStrike.data) return;
+    if (!longestStrike.data)   return;
 
     setStrikesData((prev: any) => {
-      const index = prev.findIndex((item: any) => item.id == 'longest');
+      const index = prev.findIndex((item: any) => item.id === 'longest');
+      if (index === -1) return prev;
       return [
         ...prev.slice(0, index),
-        {
-          ...prev[index],
-          value: longestStrike.data.total_strikes,
-        },
+        { ...prev[index], value: longestStrike.data.total_strikes },
         ...prev.slice(index + 1),
       ];
     });
   }, [longestStrike]);
 
-  // failed strike
+  // Failed strike
   useEffect(() => {
     if (failedStrike.loading) return;
-    if (!failedStrike.data) return;
+    if (!failedStrike.data)   return;
 
     setStrikesData((prev: any) => {
-      const index = prev.findIndex((item: any) => item.id == 'failed');
+      const index = prev.findIndex((item: any) => item.id === 'failed');
+      if (index === -1) return prev;
       return [
         ...prev.slice(0, index),
-        {
-          ...prev[index],
-          value: failedStrike.data.total_failed_days,
-        },
+        { ...prev[index], value: failedStrike.data.total_failed_days },
         ...prev.slice(index + 1),
       ];
     });
   }, [failedStrike]);
 
-  // loading placeholder
+  // Loading placeholder
   if (goal.loading || !goal.data || longestStrike.loading || failedStrike.loading) {
     return <LoadingSkeleton />;
   }
@@ -437,37 +427,37 @@ export default function StrikeCard() {
     <React.Fragment>
       <View style={styles.container}>
         <View style={styles.card}>
-          {/* ── Content ── */}
           <View style={styles.cardContent}>
             <View style={styles.contentRow}>
               <View style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 16, flexDirection: 'row' }}>
                 <View>
-                  {/* ── Header ── */}
+                  {/* Header */}
                   <View style={styles.header}>
                     <MaterialIcons name="checklist" style={{ fontSize: 22 }} />
                     <Text style={[styles.title, { flex: 1, paddingLeft: 8 }]}>Daily Goal</Text>
                   </View>
 
                   <View style={styles.circleWrapper}>
-                    <CircularProgress current={currentSeconds} target={currentTarget} goal={goal.data} />
+                    <CircularProgress
+                      current={currentSeconds}
+                      target={currentTarget}
+                      goal={goal.data}
+                    />
                     <Text style={styles.todayLabel}>{percentage + '%'}</Text>
                   </View>
                 </View>
 
-                {/* ── Strike Info ── */}
+                {/* Strike Info */}
                 <View style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 12, gap: 14 }}>
-                  {strikesData.map((item: any) => {
-                    return (
-                      <View key={item.id} style={styles.strikeItem}>
-                        <MaterialIcons name={item.icon} size={24} color={item.color} />
-
-                        <View>
-                          <Text style={styles.strikeLabel}>{item.label}</Text>
-                          <Text style={styles.strikeValue}>{item.value}</Text>
-                        </View>
+                  {strikesData.map((item: any) => (
+                    <View key={item.id} style={styles.strikeItem}>
+                      <MaterialIcons name={item.icon} size={24} color={item.color} />
+                      <View>
+                        <Text style={styles.strikeLabel}>{item.label}</Text>
+                        <Text style={styles.strikeValue}>{item.value}</Text>
                       </View>
-                    )
-                  })}
+                    </View>
+                  ))}
                 </View>
               </View>
 
@@ -682,7 +672,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  // strike
+  // Strike
   strikeItem: {
     display: 'flex',
     flexDirection: 'row',
@@ -701,7 +691,7 @@ const styles = StyleSheet.create({
   strikeValue: {
     marginTop: 2,
     fontSize: 16,
-    fontWeight: 700,
+    fontWeight: '700',
     color: '#1A1A2E',
-  }
+  },
 });
