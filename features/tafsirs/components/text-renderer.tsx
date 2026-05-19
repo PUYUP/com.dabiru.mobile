@@ -11,171 +11,342 @@ import {
     EBGaramond_800ExtraBold_Italic,
     useFonts,
 } from '@expo-google-fonts/eb-garamond';
-import { StyleSheet, useWindowDimensions, View } from "react-native";
-import RenderHtml, {
-    CustomTagRendererRecord,
-    HTMLContentModel,
-    HTMLElementModel,
-} from 'react-native-render-html';
+
+import React, {
+    forwardRef,
+    useImperativeHandle,
+    useRef,
+    useState,
+} from 'react';
+
+import {
+    StyleSheet,
+    useWindowDimensions,
+    View,
+} from 'react-native';
+
+import { WebView } from 'react-native-webview';
 
 interface Props {
     htmlText: string;
     italic?: boolean;
     fontSize?: number;
-    /** Callback fired when the user selects text (Android only via onSelectionChange) */
-    onTextSelected?: (selectedText: string) => void;
+    onTextSelected?: (selectedText: string | null) => void;
 }
 
-const tajweedModel = HTMLElementModel.fromCustomModel({
-    tagName: 'tajweed',
-    contentModel: HTMLContentModel.textual,
-});
+export interface TextRendererHandle {
+    clearSelection: () => void;
+}
 
-const supModel = HTMLElementModel.fromCustomModel({
-    tagName: 'sup',
-    contentModel: HTMLContentModel.textual,
-});
+const tajweedCSS = `
+  .ham_wasl, .laam_shamsiyah { color: #AAAAAA; }
+  .madda_normal               { color: #537FFF; }
+  .madda_permissible          { color: #4BC8CF; }
+  .madda_obligatory           { color: #2144C1; }
+  .ghunnah                    { color: #FF7E1D; }
+  .ikhafa                     { color: #9400D3; }
+  .idgham_ghunnah             { color: #169777; }
+  .idgham_wo_ghunnah          { color: #169200; }
+  .qalaqah                    { color: #DD6608; }
+  .slnt                       { color: #AAAAAA; }
+`;
 
-const customHTMLElementModels = { tajweed: tajweedModel, sup: supModel };
+const TextRenderer = forwardRef<TextRendererHandle, Props>(
+    (
+        {
+            htmlText,
+            italic = false,
+            fontSize = 18,
+            onTextSelected,
+        },
+        ref
+    ) => {
+        const { width } = useWindowDimensions();
+        const [webViewHeight, setWebViewHeight] = useState(1);
+        const webViewRef = useRef<WebView>(null);
 
-const tajweedColors: Record<string, string> = {
-    ham_wasl: '#AAAAAA',
-    laam_shamsiyah: '#AAAAAA',
-    madda_normal: '#537FFF',
-    madda_permissible: '#4BC8CF',
-    madda_obligatory: '#2144C1',
-    ghunnah: '#FF7E1D',
-    ikhafa: '#9400D3',
-    idgham_ghunnah: '#169777',
-    idgham_wo_ghunnah: '#169200',
-    qalaqah: '#DD6608',
-    slnt: '#AAAAAA',
-};
+        useImperativeHandle(ref, () => ({
+            clearSelection: () => {
+                webViewRef.current?.injectJavaScript(`
+                    window.getSelection().removeAllRanges();
+                    true;
+                `);
+            },
+        }));
 
-const renderers: CustomTagRendererRecord = {
-    tajweed: ({ tnode, TDefaultRenderer, ...props }: any) => {
-        const cls = tnode.attributes?.class ?? '';
-        const color = tajweedColors[cls] ?? undefined;
+        const [fontsLoaded] = useFonts({
+            EBGaramond_400Regular,
+            EBGaramond_400Regular_Italic,
+            EBGaramond_500Medium,
+            EBGaramond_500Medium_Italic,
+            EBGaramond_600SemiBold,
+            EBGaramond_600SemiBold_Italic,
+            EBGaramond_700Bold,
+            EBGaramond_700Bold_Italic,
+            EBGaramond_800ExtraBold,
+            EBGaramond_800ExtraBold_Italic,
+        });
+
+        if (!htmlText || !fontsLoaded) {
+            return null;
+        }
+
+        const fontStyle = italic ? 'italic' : 'normal';
+        const lineHeight = fontSize * 1.45;
+        const injectedJS = `
+            (function() {
+
+                function postHeight() {
+                    const body = document.body;
+                    const html = document.documentElement;
+
+                    const height = Math.max(
+                        body.scrollHeight,
+                        body.offsetHeight,
+                        html.clientHeight,
+                        html.scrollHeight,
+                        html.offsetHeight
+                    );
+
+                    window.ReactNativeWebView.postMessage(
+                        JSON.stringify({
+                            type: 'HEIGHT',
+                            height: height
+                        })
+                    );
+                }
+                postHeight();
+                window.addEventListener('load', postHeight);
+
+                let resizeTimeout;
+
+                if (window.ResizeObserver) {
+                    const resizeObserver = new ResizeObserver(() => {
+                        clearTimeout(resizeTimeout);
+                        resizeTimeout = setTimeout(() => {
+                            requestAnimationFrame(postHeight);
+                        }, 50);
+
+                    });
+
+                    resizeObserver.observe(document.body);
+                }
+
+                let selectionTimeout;
+
+                document.addEventListener('selectionchange', function() {
+                    clearTimeout(selectionTimeout);
+                    selectionTimeout = setTimeout(() => {
+                        const text = window
+                            .getSelection()
+                            .toString()
+                            .trim();
+
+                        window.ReactNativeWebView.postMessage(
+                            JSON.stringify({
+                                type: 'SELECTION_CHANGE',
+                                text: text || null
+                            })
+                        );
+                    }, 50);
+                });
+            })();
+            true;
+        `;
+
+        const handleMessage = (event: any) => {
+            try {
+                const parsed = JSON.parse(event.nativeEvent.data);
+
+                if (
+                    parsed.type === 'HEIGHT' &&
+                    parsed.height > 0
+                ) {
+                    setWebViewHeight(parsed.height);
+                }
+
+                if (parsed.type === 'SELECTION_CHANGE') {
+                    onTextSelected?.(parsed.text);
+                }
+            } catch (error) {}
+        };
+
+        const styledHTML = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+                />
+
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+
+                <link
+                    rel="preconnect"
+                    href="https://fonts.gstatic.com"
+                    crossorigin
+                >
+
+                <link
+                    href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap"
+                    rel="stylesheet"
+                >
+
+                <style>
+                    * {
+                        box-sizing: border-box;
+                        margin: 0;
+                        padding: 0;
+                    }
+
+                    @font-face {
+                        font-family: 'UthmanicHafs';
+
+                        src:
+                            url('https://verses.quran.foundation/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2')
+                            format('woff2'),
+
+                            url('https://verses.quran.foundation/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf')
+                            format('truetype');
+
+                        font-display: swap;
+                    }
+
+                    html,
+                    body {
+                        width: 100%;
+                        overflow: hidden;
+
+                        font-family:
+                            'EB Garamond',
+                            'UthmanicHafs',
+                            'Traditional Arabic',
+                            serif;
+
+                        background: transparent;
+                    }
+
+                    body {
+                        color: #222222;
+                        font-size: ${fontSize}px;
+                        line-height: ${lineHeight}px;
+                        font-style: ${fontStyle};
+                        font-weight: 500;
+                        word-wrap: break-word;
+                        overflow-wrap: break-word;
+                        -webkit-user-select: text;
+                        user-select: text;
+                        -webkit-touch-callout: default;
+                        padding: 0;
+                    }
+
+                    p,
+                    div,
+                    span,
+                    h2,
+                    h3 {
+                        unicode-bidi: plaintext;
+                    }
+
+                    h2 {
+                        margin-bottom: 16px;
+                        font-weight: 700;
+                    }
+
+                    h3 {
+                        margin-bottom: 12px;
+                        font-weight: 600;
+                    }
+
+                    p {
+                        margin-bottom: 16px;
+                    }
+
+                    strong {
+                        font-weight: 700;
+                        font-style: ${italic ? 'italic' : 'normal'};
+                    }
+
+                    em {
+                        font-style: italic;
+                    }
+
+                    sup {
+                        font-size: ${fontSize * 0.7}px;
+                        display: none;
+                    }
+
+                    img {
+                        max-width: 100%;
+                        height: auto;
+                    }
+
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+
+                    ${tajweedCSS}
+                </style>
+            </head>
+
+            <body>
+                ${htmlText}
+            </body>
+            </html>
+        `;
+
         return (
-            <TDefaultRenderer tnode={tnode} {...props} style={{ color }} />
-        );
-    },
-};
-
-export default function TextRenderer({
-    htmlText,
-    italic = false,
-    fontSize = 18,
-    onTextSelected,
-}: Props) {
-    const { width } = useWindowDimensions();
-
-    const [fontsLoaded] = useFonts({
-        EBGaramond_400Regular,
-        EBGaramond_400Regular_Italic,
-        EBGaramond_500Medium,
-        EBGaramond_500Medium_Italic,
-        EBGaramond_600SemiBold,
-        EBGaramond_600SemiBold_Italic,
-        EBGaramond_700Bold,
-        EBGaramond_700Bold_Italic,
-        EBGaramond_800ExtraBold,
-        EBGaramond_800ExtraBold_Italic,
-    });
-
-    if (!htmlText || !fontsLoaded) return null;
-
-    const fontFamily = italic
-        ? 'EBGaramond_500Medium_Italic'
-        : 'EBGaramond_500Medium';
-
-    return (
-        <View style={styles.card}>
-            <RenderHtml
-                contentWidth={width - 64}
-                source={{ html: htmlText }}
-                customHTMLElementModels={customHTMLElementModels}
-                renderers={renderers}
-                ignoredDomTags={['sup']}
-                systemFonts={[
-                    'EBGaramond_400Regular',
-                    'EBGaramond_400Regular_Italic',
-                    'EBGaramond_500Medium',
-                    'EBGaramond_500Medium_Italic',
-                    'EBGaramond_600SemiBold',
-                    'EBGaramond_600SemiBold_Italic',
-                    'EBGaramond_700Bold',
-                    'EBGaramond_700Bold_Italic',
-                    'EBGaramond_800ExtraBold',
-                    'EBGaramond_800ExtraBold_Italic',
+            <View
+                style={[
+                    styles.card,
+                    {
+                        width,
+                    },
                 ]}
-                // ─── Text selection (iOS & Android) ───────────────────────────
-                // react-native-render-html passes renderersProps down to every
-                // Text node it creates.  Setting `selectable: true` here makes
-                // ALL text nodes selectable, which gives native iOS magnifier /
-                // copy-menu and Android selection handles out of the box.
-                renderersProps={{
-                    // The key "body" targets the root wrapper; individual leaf
-                    // Text nodes honour the selectable flag via the library's
-                    // internal defaultTextProps spreading.
-                    body: {
-                        selectable: true,
-                    },
-                }}
-                // defaultTextProps is the correct API for setting props on every
-                // Text leaf rendered by the library (works on both platforms).
-                defaultTextProps={{
-                    selectable: true,
-                    // Android: suppress the default long-press context menu that
-                    // only shows "Select All" – the native handles already appear.
-                    suppressHighlighting: false,
-                }}
-                baseStyle={{
-                    textAlign: 'left',
-                    writingDirection: 'ltr',
-                    fontSize,
-                    lineHeight: fontSize * 1.65,
-                    fontStyle: italic ? 'italic' : 'normal',
-                    fontFamily,
-                    color: '#222222',
-                }}
-                tagsStyles={{
-                    h2: {
-                        marginBottom: 16,
-                        fontWeight: '600',
-                        fontFamily: 'EBGaramond_600SemiBold',
-                    },
-                    h3: {
-                        marginBottom: 12,
-                        fontWeight: '500',
-                        fontFamily: 'EBGaramond_500Medium',
-                    },
-                    p: {
-                        marginBottom: 16,
-                        fontFamily,
-                    },
-                    strong: {
-                        fontFamily: italic
-                            ? 'EBGaramond_700Bold_Italic'
-                            : 'EBGaramond_700Bold',
-                        fontWeight: '700',
-                    },
-                    em: {
-                        fontFamily: 'EBGaramond_500Medium_Italic',
-                        fontStyle: 'italic',
-                    },
-                    sup: {
-                        fontSize: fontSize * 0.7,
-                        display: 'none',
-                    },
-                }}
-            />
-        </View>
-    );
-}
+            >
+                <WebView
+                    ref={webViewRef}
+                    originWhitelist={['*']}
+                    source={{
+                        html: styledHTML,
+                    }}
+                    injectedJavaScript={injectedJS}
+                    onMessage={handleMessage}
+                    scrollEnabled={false}
+                    showsVerticalScrollIndicator={false}
+                    showsHorizontalScrollIndicator={false}
+                    bounces={false}
+                    automaticallyAdjustContentInsets={false}
+                    contentInset={{
+                        top: 0,
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                    }}
+                    style={[
+                        styles.webView,
+                        {
+                            width: width - 32,
+                            height: webViewHeight,
+                        },
+                    ]}
+                />
+            </View>
+        );
+    }
+);
+
+TextRenderer.displayName = 'TextRenderer';
+
+export default TextRenderer;
 
 const styles = StyleSheet.create({
     card: {
+        backgroundColor: 'transparent',
+    },
+    webView: {
         backgroundColor: 'transparent',
     },
 });

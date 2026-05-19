@@ -41,6 +41,7 @@ export function useQFAuth() {
         "preference",
         "user",
         "activity_day",
+        "note",
       ],
       redirectUri: redirectURI,
       usePKCE: true,

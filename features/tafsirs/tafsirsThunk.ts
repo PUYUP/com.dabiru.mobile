@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { createGoalAPI, getTafsirsAPI, getUthmaniTajweedWithKeyAPI, getVerseByKeyAPI, getVerseByRangeAPI, supabaseSummarizeTafsirAPI } from "./tafsirsAPI";
+import { addNotesAPI, createGoalAPI, getTafsirsAPI, getUthmaniTajweedWithKeyAPI, getVerseByKeyAPI, getVerseByRangeAPI, supabaseExplainingTafsirAPI, supabaseSummarizeTafsirAPI } from "./tafsirsAPI";
 import { CreateGoalPayload, GetRangeQuery, GetVerseQuery, TafsirSummarizerPayload } from "./tafsirsTyping";
 
 export const getTafsirs = createAsyncThunk(
@@ -46,5 +46,21 @@ export const summarizing = createAsyncThunk(
     'tafsirs/summarizing',
     async (payload: TafsirSummarizerPayload) => {
         return await supabaseSummarizeTafsirAPI(payload);
+    }
+);
+
+// explaining
+export const explaining = createAsyncThunk(
+    'tafsirs/explaining',
+    async (payload: TafsirSummarizerPayload) => {
+        return await supabaseExplainingTafsirAPI(payload);
+    }
+);
+
+// add notes
+export const addNotes = createAsyncThunk(
+    'tafsirs/addNotes',
+    async (payload: { body: string, ranges: string[] }) => {
+        return await addNotesAPI(payload.body, payload.ranges);
     }
 );

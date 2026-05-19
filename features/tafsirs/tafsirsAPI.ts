@@ -226,3 +226,48 @@ export const supabaseSummarizeTafsirAPI = async (
         return data;
     });
 };
+
+// explaining with AI
+export const supabaseExplainingTafsirAPI = async (
+    payload: TafsirSummarizerPayload
+) => {
+    return withRetry(async () => {
+        const { data, error } = await supabase.functions.invoke(
+            'gpt-tafsir-explainer',
+            {
+                body: {
+                    surah_name: payload.surah_name,
+                    chapter_number: payload.chapter_number,
+                    verse_number: payload.verse_number,
+                    tafsir_text: payload.tafsir_text,
+                    language: payload.language,
+                },
+            }
+        );
+
+        if (error) {
+            console.log(
+                'Supabase explaining tafsir error:',
+                error
+            );
+
+            throw error;
+        }
+
+        return data;
+    });
+};
+
+// add notes
+export const addNotesAPI = async (
+    body: string,
+    ranges: string[],
+) => {
+    try {
+        const res = await api.post(`/auth/v1/notes`, { body, ranges });
+        return res.data;
+    } catch (error: any) {
+        console.log("Error add notes:", error.response?.data);
+        throw error;
+    }
+};

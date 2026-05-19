@@ -1,5 +1,5 @@
 import { createSlice, SerializedError } from "@reduxjs/toolkit";
-import { createGoal, getTafsirs, getUthmaniTajweedWithKey, getVerseByKey, getVerseByRange, summarizing } from "./tafsirsThunk";
+import { addNotes, createGoal, explaining, getTafsirs, getUthmaniTajweedWithKey, getVerseByKey, getVerseByRange, summarizing } from "./tafsirsThunk";
 import { GoalResponse } from "./tafsirsTyping";
 
 const initialState = {
@@ -29,6 +29,21 @@ const initialState = {
         loading: false,
         error: null as SerializedError | null,
     },
+    explainer: {
+        data: null as null,
+        loading: false,
+        error: null as SerializedError | null,
+    },
+    addNotes: {
+        data: null as null,
+        loading: false,
+        error: null as SerializedError | null,
+    },
+    notes: {
+        data: [] as any[],
+        loading: false,
+        error: null as SerializedError | null,
+    }
 };
 
 const tafsirsSlice = createSlice({
@@ -37,6 +52,13 @@ const tafsirsSlice = createSlice({
     reducers: {
         resetSummary: (state) => {
             state.summary = initialState.summary;
+        },
+        resetExplainer: (state) => {
+            state.explainer = initialState.explainer;
+        },
+        resetAddNotes: (state) => {
+            state.addNotes = initialState.addNotes;
+            state.notes = initialState.notes;
         },
         resetVerse: (state) => {
             state.verse = initialState.verse;
@@ -142,8 +164,49 @@ const tafsirsSlice = createSlice({
                 state.summary.loading = false;
                 state.summary.error = error;
             })
+
+            // explainer
+            .addCase(explaining.pending, (state) => {
+                console.log('Explaining tafsirs...');
+                state.explainer.loading = true;
+                state.explainer.error = null;
+            })
+            .addCase(explaining.fulfilled, (state, { payload }) => {
+                console.log('Explaining tafsirs success!');
+                state.explainer.data = payload;
+                state.explainer.loading = false;
+                state.explainer.error = null;
+            })
+            .addCase(explaining.rejected, (state, { error }) => {
+                console.log('Explaining tafsirs failed:', error);
+                state.explainer.loading = false;
+                state.explainer.error = error;
+            })
+
+            // add notes
+            .addCase(addNotes.pending, (state) => {
+                console.log('addNotes tafsirs...');
+                state.addNotes.loading = true;
+                state.addNotes.error = null;
+            })
+            .addCase(addNotes.fulfilled, (state, { payload }) => {
+                console.log('addNotes tafsirs success!', payload);
+                state.addNotes.data = payload;
+                state.addNotes.loading = false;
+                state.addNotes.error = null;
+
+                state.notes.data = [
+                    payload.data,
+                    ...state.notes.data,
+                ];
+            })
+            .addCase(addNotes.rejected, (state, { error }) => {
+                console.log('addNotes tafsirs failed:', error);
+                state.addNotes.loading = false;
+                state.addNotes.error = error;
+            })
     },
 });
 
-export const { resetSummary, resetVerse } = tafsirsSlice.actions;
+export const { resetSummary, resetExplainer, resetAddNotes, resetVerse } = tafsirsSlice.actions;
 export default tafsirsSlice.reducer;

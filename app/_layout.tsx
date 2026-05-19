@@ -134,6 +134,7 @@ function RootNav() {
             <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
             <Stack.Screen name="adjust-goal-modal" options={{ headerShown: false, presentation: 'modal', title: 'Adjust Goal' }} />
             <Stack.Screen name="tafsir-reader" options={{ headerShown: true, headerBackButtonDisplayMode: 'minimal', title: 'Read Tafsir' }} />
+            <Stack.Screen name="tafsir-explainer" options={{ presentation: 'modal', title: 'Explainer' }} />
             <Stack.Screen name="history-detail" options={{ headerShown: true, headerBackButtonDisplayMode: 'minimal', title: 'History Detail' }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />

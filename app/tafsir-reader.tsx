@@ -1,19 +1,22 @@
 import { MUSHAF_ID } from "@/constants/oauth";
+import { theme } from "@/constants/theme";
 import ReadingTimer from "@/features/reading/components/reading-timer";
 import { resetCreateSession } from "@/features/reading/readingSlice";
 import { supabaseCreateReadingSession, supabaseGetSessions } from "@/features/reading/readingThunk";
 import { GetSessionQuery } from "@/features/reading/readingTyping";
-import TextRenderer from "@/features/tafsirs/components/text-renderer";
+import TextRenderer, { TextRendererHandle } from "@/features/tafsirs/components/text-renderer";
 import VerseRenderer from "@/features/tafsirs/components/verse-renderer";
-import { resetVerse } from "@/features/tafsirs/tafsirsSlice";
-import { getVerseByRange } from "@/features/tafsirs/tafsirsThunk";
+import { resetAddNotes, resetExplainer, resetVerse } from "@/features/tafsirs/tafsirsSlice";
+import { addNotes, explaining, getVerseByRange } from "@/features/tafsirs/tafsirsThunk";
+import { TafsirSummarizerPayload } from "@/features/tafsirs/tafsirsTyping";
 import { addActivity, createReadingSession, getGoal, getLatestSession } from "@/features/user/userThunks";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { format } from "date-fns/format";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ActivityIndicator } from "react-native-paper";
+import { ActivityIndicator, Button, IconButton } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const PRIMARY = "#5E5545";
@@ -116,6 +119,8 @@ export default function TafsirReader() {
     const increaseFont = () => setFontSize((prev) => Math.min(prev + FONT_SIZE_STEP, FONT_SIZE_MAX));
     const decreaseFont = () => setFontSize((prev) => Math.max(prev - FONT_SIZE_STEP, FONT_SIZE_MIN));
 
+    const notesAdded = useAppSelector((state: any) => state.tafsirs.addNotes);
+    const explainer = useAppSelector((state: any) => state.tafsirs.explainer);
     const verses = useAppSelector((state: any) => state.tafsirs.verses);
     const config = useAppSelector((state: any) => state.config);
     const preferences = config.preferences;
@@ -126,10 +131,12 @@ export default function TafsirReader() {
     const goal = useAppSelector((state: any) => state.user.goal);
     const dailyTargetSeconds = goal.data?.dailyTargetSeconds ?? 0;
     const [renderVerse, setRenderVerse] = useState<string>('');
+    const [selectedText, setSelectedText] = useState<string | null>('');
    
     const scrollRef = useRef({ x: 0, y: 0 });
     const sessionCreated = useRef(false);
     const scrollViewRef = useRef<ScrollView>(null);
+    const textRendererRef = useRef<TextRendererHandle>(null);
 
     useEffect(() => {
         if (!chapter || !from || !to) return;
@@ -241,6 +248,40 @@ export default function TafsirReader() {
         setRenderVerse(textUthmani.join(' '));
     }, [verses]);
 
+    // explainer
+    useEffect(() => {
+        if (explainer.loading || verses.loading) return;
+        if (!explainer.data) return;
+        if (!verses.data || verses.data.length <= 0) return;
+
+        const firstVerse = verses.data[0];
+        const lastVerse = verses.data[verses.data.length - 1];
+        const verseRanges = firstVerse.verse_key + '-' + lastVerse.verse_key;
+
+        // save as notes
+        const payload = {
+            body: JSON.stringify({
+                question: selectedText,
+                answer: explainer.data.result.explanation,
+            }),
+            ranges: [verseRanges],
+        }
+
+        dispatch(resetAddNotes());
+        dispatch(addNotes(payload) as any);
+    }, [explainer, verses]);
+
+    useEffect(() => {
+        if (notesAdded.loading) return;
+        if (!notesAdded.data) return;
+
+        // to explainer page
+        router.push({
+            pathname: '/tafsir-explainer',
+            params: { verseRanges: notesAdded.data.ranges }
+        })
+    }, [notesAdded]);
+
     if (sbLatestSession.loading || qfLatestSession.loading || verses.loading) {
         return <LoadingSkeleton />;
     }
@@ -340,6 +381,31 @@ export default function TafsirReader() {
         scrollRef.current = { x, y };
     };
 
+    const onTextSelectedHandler = (value: string | null) => {
+        setSelectedText(value);
+    }
+
+    const handleClear = () => {
+        textRendererRef.current?.clearSelection(); // clear di WebView
+        setSelectedText(null);                     // reset state parent
+    };
+
+    const explainHandler = () => {
+        if (!selectedText) return;
+
+        dispatch(resetExplainer());
+
+        const payload: TafsirSummarizerPayload = {
+            tafsir_text: selectedText,
+            verse_number: Number(from),
+            chapter_number: Number(chapter),
+            surah_name: surah.name_simple,
+            language: preferences.language.language,
+        }
+
+        dispatch(explaining(payload) as any);
+    }
+
     return (
         <>
             {sbCreateSession.loading && <ProcessingOverlay />}
@@ -387,7 +453,6 @@ export default function TafsirReader() {
                         {/* Translation */}
                         {translationText && (
                             <View style={styles.blockquote}>
-                                <View style={styles.blockquoteBar} />
                                 <View style={styles.blockquoteContent}>
                                     <Text style={styles.blockquoteLabel}>Translation</Text>
                                     <TextRenderer htmlText={translationText} italic fontSize={fontSize} />
@@ -398,20 +463,57 @@ export default function TafsirReader() {
                         {/* Tafsir */}
                         {tafsirText && (
                             <View style={styles.tafsirBody}>
-                                <TextRenderer htmlText={tafsirText} fontSize={fontSize} />
+                                <TextRenderer 
+                                    ref={textRendererRef}
+                                    htmlText={tafsirText} 
+                                    fontSize={fontSize} 
+                                    onTextSelected={onTextSelectedHandler} 
+                                />
                             </View>
                         )}
                     </View>
                 </ScrollView>
 
                 <View style={styles.timerWrap}>
-                    <ReadingTimer
-                        onPause={onPauseHandler}
-                        onResume={onResumeHandler}
-                        onFinish={onFinishHandler}
-                        autoStart={true}
-                        startFromSeconds={sbLatestSession.data?.status === 'ended' ? 0 : (sbLatestSession.data?.total_read_seconds ?? 0)}
-                    />
+                    {selectedText && (
+                        <View style={{ 
+                            backgroundColor: PRIMARY_LIGHT, 
+                            display: 'flex', 
+                            flexDirection: 'row', 
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                        }}>
+                            <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                                <Button
+                                    onPress={explainHandler}
+                                    contentStyle={{ flexDirection: 'row', alignItems: 'center' }}
+                                    icon={() => <MaterialIcons color={theme.colors.primary} name="assistant" size={20} />}
+                                    disabled={explainer.loading}
+                                >
+                                    Explain with AI
+                                </Button>
+
+                                {explainer.loading && (
+                                    <ActivityIndicator size={16} />
+                                )}
+                            </View>
+
+                            <IconButton icon={'close'} onPress={() => {
+                                setSelectedText(null);
+                                handleClear();
+                            }} />
+                        </View>
+                    )}
+
+                    <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
+                        <ReadingTimer
+                            onPause={onPauseHandler}
+                            onResume={onResumeHandler}
+                            onFinish={onFinishHandler}
+                            autoStart={true}
+                            startFromSeconds={sbLatestSession.data?.status === 'ended' ? 0 : (sbLatestSession.data?.total_read_seconds ?? 0)}
+                        />
+                    </View>
                 </View>
             </SafeAreaView>
         </>
@@ -525,11 +627,6 @@ const styles = StyleSheet.create({
         marginBottom: 28,
         gap: 12,
     },
-    blockquoteBar: {
-        width: 3,
-        borderRadius: 99,
-        backgroundColor: '#C8A97E',
-    },
     blockquoteContent: {
         flex: 1,
         gap: 6,
@@ -569,7 +666,5 @@ const styles = StyleSheet.create({
     timerWrap: {
         borderTopWidth: 1,
         borderTopColor: '#ECE7DC',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
     },
 });
