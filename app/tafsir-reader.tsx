@@ -117,6 +117,7 @@ export default function TafsirReader() {
     const { source, chapter, from, to } = useLocalSearchParams();
 
     const [fontSize, setFontSize] = useState(FONT_SIZE_DEFAULT);
+    const [isTafsirReady, setIsTafsirReady] = useState(false);
 
     const increaseFont = () => setFontSize((prev) => Math.min(prev + FONT_SIZE_STEP, FONT_SIZE_MAX));
     const decreaseFont = () => setFontSize((prev) => Math.max(prev - FONT_SIZE_STEP, FONT_SIZE_MIN));
@@ -147,6 +148,11 @@ export default function TafsirReader() {
             dispatch(resetExplainer());
         }, [])
     );
+
+    useEffect(() => {
+        setIsTafsirReady(false);
+    }, [chapter, from, to]);
+
     useEffect(() => {
         if (!chapter || !from || !to) return;
 
@@ -415,6 +421,7 @@ export default function TafsirReader() {
     }
 
     const onContentReadyHandler = () => {
+        setIsTafsirReady(true);
         setTimeout(() => {
             scrollViewRef.current?.scrollTo({
                 y: sbLatestSession.data.scroll_y,
@@ -491,13 +498,22 @@ export default function TafsirReader() {
                         {/* Tafsir */}
                         {tafsirText && (
                             <View style={styles.tafsirBody}>
-                                <TextRenderer 
-                                    ref={textRendererRef}
-                                    htmlText={tafsirText} 
-                                    fontSize={fontSize} 
-                                    onTextSelected={onTextSelectedHandler} 
-                                    onContentReady={onContentReadyHandler}
-                                />
+                                {!isTafsirReady && (
+                                    <View style={styles.tafsirLoading}>
+                                        <ActivityIndicator animating={true} color={PRIMARY} size="small" />
+                                        <Text style={styles.tafsirLoadingText}>Loading tafsir...</Text>
+                                    </View>
+                                )}
+
+                                <View style={{ opacity: isTafsirReady ? 1 : 0 }}>
+                                    <TextRenderer
+                                        ref={textRendererRef}
+                                        htmlText={tafsirText}
+                                        fontSize={fontSize}
+                                        onTextSelected={onTextSelectedHandler}
+                                        onContentReady={onContentReadyHandler}
+                                    />
+                                </View>
                             </View>
                         )}
                     </View>
@@ -690,6 +706,16 @@ const styles = StyleSheet.create({
     },
     tafsirBody: {
         gap: 8,
+    },
+    tafsirLoading: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 20,
+    },
+    tafsirLoadingText: {
+        fontSize: 13,
+        color: '#888',
     },
 
     // Timer
