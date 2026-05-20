@@ -1,7 +1,7 @@
 import api from "@/services/apiClient";
 import { supabase } from "@/services/supabase";
 
-const BASE_URL = "https://qf-token-exchange.pointilis-noktah-teknologi.workers.dev";
+const BASE_URL = process.env.EXPO_PUBLIC_QF_BASE_URL ?? "";
 
 // ─── Retry Helper ────────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@ import { bulkUpdateConfig, getLanguages, getTafsirs, getTranslations } from "@/f
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Button, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -140,12 +140,18 @@ const LanguageItem = ({
 export default function ChooseLanguageScreen() {
     const dispatch = useAppDispatch();
     const router = useRouter();
+    const theme = useTheme();
     const [selectedConfig, setSelectedConfig] = useState<MergedLanguageConfig | null>(null);
     const [mergedConfigs, setMergedConfigs] = useState<MergedLanguageConfig[]>([]);
 
     const languages = useAppSelector((state: any) => state.config.languages.data);
-    const translations = useAppSelector((state: any) => state.config.translations);
-    const tafsirs = useAppSelector((state: any) => state.config.tafsirs);
+    const translationsState = useAppSelector((state: any) => state.config.translations);
+    const tafsirState = useAppSelector((state: any) => state.config.tafsirs);
+
+    const isLoading =
+        useAppSelector((state: any) => state.config.languages.loading) ||
+        translationsState.loading ||
+        tafsirState.loading;
 
     useEffect(() => {
         dispatch(getLanguages() as any);
@@ -154,11 +160,11 @@ export default function ChooseLanguageScreen() {
     }, []);
 
     useEffect(() => {
-        if (!languages || !tafsirs.data || !translations.data) return;
+        if (!languages || !tafsirState.data || !translationsState.data) return;
 
-        const merged = mergeLanguageConfigs(languages, tafsirs.data, translations.data);
+        const merged = mergeLanguageConfigs(languages, tafsirState.data, translationsState.data);
         setMergedConfigs(merged);
-    }, [languages, tafsirs.data, translations.data]);
+    }, [languages, tafsirState.data, translationsState.data]);
 
     const chooseHandler = () => {
         if (!selectedConfig) return;
@@ -180,23 +186,30 @@ export default function ChooseLanguageScreen() {
                     <Text style={styles.subtitle}>Choose the language for Quran interpretation</Text>
                 </View>
 
-                <FlatList
-                    data={mergedConfigs}
-                    renderItem={({ item }) => (
-                        <LanguageItem
-                            language={item.language}
-                            isSelected={selectedConfig?.language.iso_code === item.language.iso_code}
-                            onPress={() => setSelectedConfig(item)}
-                        />
-                    )}
-                    keyExtractor={(item) => item.language.iso_code}
-                    contentContainerStyle={styles.list}
-                    showsVerticalScrollIndicator={false}
-                />
+                {isLoading ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color={theme.colors.primary} />
+                        <Text style={styles.loadingText}>Loading languages...</Text>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={mergedConfigs}
+                        renderItem={({ item }) => (
+                            <LanguageItem
+                                language={item.language}
+                                isSelected={selectedConfig?.language.iso_code === item.language.iso_code}
+                                onPress={() => setSelectedConfig(item)}
+                            />
+                        )}
+                        keyExtractor={(item) => item.language.iso_code}
+                        contentContainerStyle={styles.list}
+                        showsVerticalScrollIndicator={false}
+                    />
+                )}
 
                 <Button
                     mode="contained"
-                    disabled={!selectedConfig}
+                    disabled={!selectedConfig || isLoading}
                     onPress={chooseHandler}
                     style={styles.continueButton}
                     contentStyle={{ paddingVertical: 6 }}
@@ -268,5 +281,15 @@ const styles = StyleSheet.create({
     continueButton: {
         marginTop: 'auto',
         marginBottom: 12,
+    },
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+    },
+    loadingText: {
+        fontSize: 14,
+        color: '#888',
     },
 });

@@ -1,7 +1,7 @@
 // services/apiClient.ts
 import axios from 'axios';
 
-import { QF_CLIENT_ID } from '@/constants/oauth';
+import { QF_CLIENT_ID, QF_USE_PRELIVE } from "@/constants/oauth";
 import {
   getRefreshing,
   notifySubscribers,
@@ -16,8 +16,7 @@ import {
   onTokenRevoked,
 } from './tokenProvider';
 
-const USE_PRELIVE = true;
-const baseUrl = USE_PRELIVE
+const baseUrl = QF_USE_PRELIVE
   ? 'https://apis-prelive.quran.foundation'
   : 'https://apis.quran.foundation';
 

@@ -15,8 +15,9 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { format } from "date-fns/format";
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { ActivityIndicator, Button, IconButton } from "react-native-paper";
+import RenderHtml from 'react-native-render-html';
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const PRIMARY = "#5E5545";
@@ -112,6 +113,7 @@ export default function TafsirReader() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const dispatch = useAppDispatch();
+    const { width } = useWindowDimensions();
     const { source, chapter, from, to } = useLocalSearchParams();
 
     const [fontSize, setFontSize] = useState(FONT_SIZE_DEFAULT);
@@ -233,18 +235,18 @@ export default function TafsirReader() {
     }, [sbCreateSession.data]);
 
     // Auto scroll setelah sbLatestSession loaded
-    useEffect(() => {
-        if (sbLatestSession.loading || verses.loading) return;
-        if (!sbLatestSession.data?.scroll_y) return;
+    // useEffect(() => {
+    //     if (sbLatestSession.loading || verses.loading) return;
+    //     if (!sbLatestSession.data?.scroll_y) return;
 
-        // Slight delay agar konten sudah render dulu
-        setTimeout(() => {
-            scrollViewRef.current?.scrollTo({
-                y: sbLatestSession.data.scroll_y,
-                animated: false,
-            });
-        }, 500);
-    }, [sbLatestSession.loading, verses.loading]);
+    //     // Slight delay agar konten sudah render dulu
+    //     setTimeout(() => {
+    //         scrollViewRef.current?.scrollTo({
+    //             y: sbLatestSession.data.scroll_y,
+    //             animated: false,
+    //         });
+    //     }, 500);
+    // }, [sbLatestSession.loading, verses.loading]);
 
     // set render verse
     useEffect(() => {
@@ -301,10 +303,10 @@ export default function TafsirReader() {
     ? verses.data.map((v: any) =>
         v.tafsirs
             ?.filter((item: any) => {
-            const fingerprint = item.text?.slice(0, 100) ?? '';
-            if (seen.has(fingerprint)) return false;
-            seen.add(fingerprint);
-            return true;
+                const fingerprint = item.text?.slice(0, 100) ?? '';
+                if (seen.has(fingerprint)) return false;
+                seen.add(fingerprint);
+                return true;
             })
             .map((item: any) => item.text)
             .join(' ')
@@ -314,7 +316,7 @@ export default function TafsirReader() {
     const translationText = verses.data && verses.data.length > 0
         ? verses.data.map((v: any) => v.translations?.map((item: any) => item.text).join(' ')).join(' ')
         : null;
-
+    
     const onPauseHandler = (seconds: number) => {
         if (!chapter || !from || !to) return;
         if (seconds <= 0) return;
@@ -412,6 +414,15 @@ export default function TafsirReader() {
         dispatch(explaining(payload) as any);
     }
 
+    const onContentReadyHandler = () => {
+        setTimeout(() => {
+            scrollViewRef.current?.scrollTo({
+                y: sbLatestSession.data.scroll_y,
+                animated: true,
+            });
+        }, 150);
+    }
+
     return (
         <>
             {sbCreateSession.loading && <ProcessingOverlay />}
@@ -465,7 +476,14 @@ export default function TafsirReader() {
                             <View style={styles.blockquote}>
                                 <View style={styles.blockquoteContent}>
                                     <Text style={styles.blockquoteLabel}>Translation</Text>
-                                    <TextRenderer htmlText={translationText} italic fontSize={fontSize} />
+                                    <RenderHtml
+                                        contentWidth={width - 32}
+                                        source={{ html: translationText }}
+                                        baseStyle={{
+                                            fontSize: fontSize * 0.85,
+                                            lineHeight: fontSize * 1.25,
+                                        }}
+                                    />
                                 </View>
                             </View>
                         )}
@@ -478,6 +496,7 @@ export default function TafsirReader() {
                                     htmlText={tafsirText} 
                                     fontSize={fontSize} 
                                     onTextSelected={onTextSelectedHandler} 
+                                    onContentReady={onContentReadyHandler}
                                 />
                             </View>
                         )}

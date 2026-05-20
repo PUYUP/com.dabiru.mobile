@@ -32,6 +32,7 @@ interface Props {
     italic?: boolean;
     fontSize?: number;
     onTextSelected?: (selectedText: string | null) => void;
+    onContentReady?: () => void;
 }
 
 export interface TextRendererHandle {
@@ -83,6 +84,7 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
             italic = false,
             fontSize = 18,
             onTextSelected,
+            onContentReady,
         },
         ref
     ) => {
@@ -219,11 +221,9 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
             try {
                 const parsed = JSON.parse(event.nativeEvent.data);
 
-                if (
-                    parsed.type === 'HEIGHT' &&
-                    parsed.height > 0
-                ) {
+                if (parsed.type === 'HEIGHT' && parsed.height > 0) {
                     setWebViewHeight(parsed.height);
+                    onContentReady?.();
                 }
 
                 if (parsed.type === 'SELECTION_CHANGE') {
@@ -318,6 +318,7 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
                     p,
                     div,
                     span,
+                    h1,
                     h2,
                     h3 {
                         unicode-bidi: plaintext;
@@ -331,6 +332,10 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
                     h3 {
                         margin-bottom: 12px;
                         font-weight: 600;
+                    }
+
+                    h1, h2, h3 {
+                        font-size: ${fontSize * 1.025}px !important;
                     }
 
                     p {
