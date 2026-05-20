@@ -60,6 +60,9 @@ const fontOverrideCSS = `
   [style*="Uthmanic"],
   [style*="UTHMANIC"] {
     font-family: 'UthmanicHafs', 'Traditional Arabic', serif !important;
+    direction: rtl !important;
+    display: block !important;
+    width: 100% !important;
   }
 `;
 
@@ -133,8 +136,27 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
                     });
                 }
 
+                // ── Auto-detect Arabic text dan set RTL ──
+                function applyArabicAlignment() {
+                    const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+                    
+                    // Cek semua elemen p, div, span
+                    const elements = document.querySelectorAll('p, div, span, td');
+                    
+                    elements.forEach(function(el) {
+                        const text = el.innerText || el.textContent || '';
+                        if (arabicRegex.test(text)) {
+                            el.style.direction = 'rtl';
+                            el.style.textAlign = 'right';
+                        }
+                    });
+                }
+
                 overrideUthmanicFont();
+                applyArabicAlignment();
+
                 window.addEventListener('load', overrideUthmanicFont);
+                window.addEventListener('load', applyArabicAlignment);
                 // ──────────────────────────────────────────────────────────────────────────
 
                 function postHeight() {
@@ -281,6 +303,18 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
                         padding: 0;
                     }
 
+                    /* Arabic text alignment */
+                    [style*="kfgqpc"],
+                    [style*="KFGQPC"],
+                    [style*="Kfgqpc"],
+                    [style*="uthmanic"],
+                    [style*="Uthmanic"],
+                    [style*="UTHMANIC"] {
+                        direction: rtl;
+                        display: block;
+                        width: 100%;
+                    }
+
                     p,
                     div,
                     span,
@@ -338,6 +372,7 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
                         display: flex;
                         flex-direction: column;
                         align-items: flex-end;
+                        direction: rtl;          /* ← add this */
                         margin-bottom: 16px;
                         gap: 2px;          /* ← kecilkan gap di sini */
                     }
