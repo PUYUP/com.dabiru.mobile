@@ -52,8 +52,6 @@ function RootNav() {
 
     // 1. Belum login
     if (!isAuthenticated) {
-      if (inOnboarding) return;
-      
       if (!inAuthGroup) {
         router.replace('/(auth)/welcome');
       }
