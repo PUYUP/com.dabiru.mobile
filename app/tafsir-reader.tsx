@@ -4,8 +4,8 @@ import ReadingTimer from "@/features/reading/components/reading-timer";
 import { resetCreateSession } from "@/features/reading/readingSlice";
 import { supabaseCreateReadingSession, supabaseGetSessions } from "@/features/reading/readingThunk";
 import { GetSessionQuery } from "@/features/reading/readingTyping";
+import QuranText from "@/features/tafsirs/components/quran-text";
 import TextRenderer, { TextRendererHandle } from "@/features/tafsirs/components/text-renderer";
-import VerseRenderer from "@/features/tafsirs/components/verse-renderer";
 import { resetAddNotes, resetExplainer, resetVerse } from "@/features/tafsirs/tafsirsSlice";
 import { addNotes, explaining, getVerseByRange } from "@/features/tafsirs/tafsirsThunk";
 import { TafsirSummarizerPayload } from "@/features/tafsirs/tafsirsTyping";
@@ -447,7 +447,11 @@ export default function TafsirReader() {
 
                         {/* Arabic text */}
                         <View style={styles.verseWrap}>
-                            <VerseRenderer verseText={renderVerse} />
+                            <QuranText 
+                                verseText={renderVerse}
+                                fontSize={30}
+                                lineHeight={42} 
+                            />
                         </View>
 
                         {/* Translation */}
@@ -618,6 +622,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(0,0,0,0.07)',
         padding: 16,
         paddingVertical: 10,
+        paddingTop: 16,
         marginBottom: 24,
     },
 

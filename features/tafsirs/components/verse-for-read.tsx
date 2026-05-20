@@ -9,7 +9,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Button, useTheme } from "react-native-paper";
-import VerseRenderer from "./verse-renderer";
+import QuranText from "./quran-text";
 
 interface Props {
     verseKey?: string;
@@ -203,6 +203,8 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
         setRenderVerse(
             verses.data.map((item: any) => item.text_uthmani_tajweed).join(' ')
         );
+
+        console.log('versess', verses.data)
         setLoadingStep('done');
     }, [verses.data]);
 
@@ -257,10 +259,10 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
                 </Button>
             </View>
 
-            <VerseRenderer
+            <QuranText 
                 verseText={renderVerse}
-                fontSize={24}
-                lineHeight={42}
+                fontSize={30}
+                lineHeight={42} 
             />
         </View>
     );
@@ -280,7 +282,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        marginBottom: 1,
+        marginBottom: 6,
         justifyContent: 'space-between',
     },
     label: { fontSize: 16, fontWeight: '500', color: '#1A1A2E' },
