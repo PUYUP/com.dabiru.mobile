@@ -204,7 +204,6 @@ export default function VerseForRead({ verseKey = '1:1' }: Props) {
             verses.data.map((item: any) => item.text_uthmani_tajweed).join(' ')
         );
 
-        console.log('versess', verses.data)
         setLoadingStep('done');
     }, [verses.data]);
 

@@ -51,6 +51,28 @@ const tajweedCSS = `
   .slnt                       { color: #AAAAAA; }
 `;
 
+// CSS override: force semua elemen ber-font "kfgqpc" menggunakan UthmanicHafs dari CDN
+const fontOverrideCSS = `
+  [style*="kfgqpc"],
+  [style*="KFGQPC"],
+  [style*="Kfgqpc"],
+  [style*="uthmanic"],
+  [style*="Uthmanic"],
+  [style*="UTHMANIC"] {
+    font-family: 'UthmanicHafs', 'Traditional Arabic', serif !important;
+  }
+`;
+
+function preprocessHtml(html: string): string {
+    return html.replace(
+        /(<p[^>]*>)([\s\S]*?)(\([^)]+\))\s*(<\/p>)/gi,
+        (_, openTag, content, ref, closeTag) => {
+            // Tidak ada newline/spasi di antara span dan konten Arab
+            return `${openTag}<span class="surah-ref">${ref.trim()}</span>${content.trim()}${closeTag}`;
+        }
+    );
+}
+
 const TextRenderer = forwardRef<TextRendererHandle, Props>(
     (
         {
@@ -61,6 +83,7 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
         },
         ref
     ) => {
+        console.log(htmlText)
         const { width } = useWindowDimensions();
         const [webViewHeight, setWebViewHeight] = useState(1);
         const webViewRef = useRef<WebView>(null);
@@ -93,28 +116,46 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
 
         const fontStyle = italic ? 'italic' : 'normal';
         const lineHeight = fontSize * 1.45;
+
         const injectedJS = `
             (function() {
 
-                function postHeight() {
-                    const body = document.body;
-                    const html = document.documentElement;
+                // ── Font override: paksa semua elemen kfgqpc/uthmanic pakai UthmanicHafs ──
+                function overrideUthmanicFont() {
+                    const allElements = document.querySelectorAll('[style]');
+                    allElements.forEach(function(el) {
+                        const style = el.getAttribute('style') || '';
+                        if (
+                            style.toLowerCase().includes('kfgqpc') ||
+                            style.toLowerCase().includes('uthmanic')
+                        ) {
+                            el.style.fontFamily = "'UthmanicHafs', 'Traditional Arabic', serif";
+                        }
+                    });
+                }
 
-                    const height = Math.max(
-                        body.scrollHeight,
-                        body.offsetHeight,
-                        html.clientHeight,
-                        html.scrollHeight,
-                        html.offsetHeight
-                    );
+                overrideUthmanicFont();
+                window.addEventListener('load', overrideUthmanicFont);
+                // ──────────────────────────────────────────────────────────────────────────
+
+                function postHeight() {
+                    // Paksa body shrink dulu sebelum ukur
+                    document.body.style.height = 'auto';
+                    document.documentElement.style.height = 'auto';
+
+                    // Ukur dari last element, bukan scrollHeight
+                    const children = document.body.children;
+                    if (children.length === 0) return;
+
+                    const lastChild = children[children.length - 1];
+                    const rect = lastChild.getBoundingClientRect();
+                    const height = Math.ceil(rect.bottom);
 
                     window.ReactNativeWebView.postMessage(
-                        JSON.stringify({
-                            type: 'HEIGHT',
-                            height: height
-                        })
+                        JSON.stringify({ type: 'HEIGHT', height: height })
                     );
                 }
+
                 postHeight();
                 window.addEventListener('load', postHeight);
 
@@ -126,7 +167,6 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
                         resizeTimeout = setTimeout(() => {
                             requestAnimationFrame(postHeight);
                         }, 50);
-
                     });
 
                     resizeObserver.observe(document.body);
@@ -215,6 +255,7 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
 
                     html,
                     body {
+                        height: auto !important; 
                         width: 100%;
                         overflow: hidden;
 
@@ -287,12 +328,40 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
                         border-collapse: collapse;
                     }
 
+                    /* Ganti p yang lama */
+                    p {
+                        margin-bottom: 16px;
+                        unicode-bidi: plaintext;
+                    }
+
+                    /* Khusus p yang mengandung Arab + surah-ref */
+                    p:has(.surah-ref) {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: flex-end;
+                        margin-bottom: 16px;
+                        gap: 2px;          /* ← kecilkan gap di sini */
+                    }
+
+                    .surah-ref {
+                        font-family: 'EB Garamond', serif;
+                        font-size: ${fontSize * 0.85}px;
+                        color: #888888;
+                        font-style: italic;
+                        direction: ltr;
+                        line-height: 1.4;
+                        margin: 0;
+                        margin-bottom: 16px;
+                    }
+
                     ${tajweedCSS}
+
+                    ${fontOverrideCSS}
                 </style>
             </head>
 
             <body>
-                ${htmlText}
+                ${preprocessHtml(htmlText)}
             </body>
             </html>
         `;
