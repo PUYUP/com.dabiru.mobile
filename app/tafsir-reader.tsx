@@ -13,8 +13,8 @@ import { addActivity, createReadingSession, getGoal, getLatestSession } from "@/
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { format } from "date-fns/format";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ActivityIndicator, Button, IconButton } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -138,6 +138,13 @@ export default function TafsirReader() {
     const scrollViewRef = useRef<ScrollView>(null);
     const textRendererRef = useRef<TextRendererHandle>(null);
 
+    useFocusEffect(
+        useCallback(() => {
+            // Jalan setiap kali halaman focused (termasuk saat back)
+            dispatch(resetAddNotes());
+            dispatch(resetExplainer());
+        }, [])
+    );
     useEffect(() => {
         if (!chapter || !from || !to) return;
 
@@ -250,9 +257,8 @@ export default function TafsirReader() {
 
     // explainer
     useEffect(() => {
-        if (explainer.loading || verses.loading) return;
+        if (explainer.loading) return;
         if (!explainer.data) return;
-        if (!verses.data || verses.data.length <= 0) return;
 
         const firstVerse = verses.data[0];
         const lastVerse = verses.data[verses.data.length - 1];
@@ -269,7 +275,7 @@ export default function TafsirReader() {
 
         dispatch(resetAddNotes());
         dispatch(addNotes(payload) as any);
-    }, [explainer, verses]);
+    }, [explainer.data]);
 
     useEffect(() => {
         if (notesAdded.loading) return;
@@ -279,8 +285,8 @@ export default function TafsirReader() {
         router.push({
             pathname: '/tafsir-explainer',
             params: { verseRanges: notesAdded.data.ranges }
-        })
-    }, [notesAdded]);
+        });
+    }, [notesAdded.data]);
 
     if (sbLatestSession.loading || qfLatestSession.loading || verses.loading) {
         return <LoadingSkeleton />;
@@ -494,7 +500,7 @@ export default function TafsirReader() {
                                     icon={() => <MaterialIcons color={theme.colors.primary} name="assistant" size={20} />}
                                     disabled={explainer.loading}
                                 >
-                                    Explain with AI
+                                    {explainer.loading ? 'Processing...' : 'Explain with AI' }
                                 </Button>
 
                                 {explainer.loading && (

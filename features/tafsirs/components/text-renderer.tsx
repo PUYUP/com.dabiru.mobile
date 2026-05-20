@@ -83,7 +83,6 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
         },
         ref
     ) => {
-        console.log(htmlText)
         const { width } = useWindowDimensions();
         const [webViewHeight, setWebViewHeight] = useState(1);
         const webViewRef = useRef<WebView>(null);
