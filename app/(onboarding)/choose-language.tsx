@@ -52,6 +52,8 @@ const KATHIR_SLUG_PATTERNS = [
     /kas[ei]r/i,
     /katir/i,
     /kacir/i,
+    /kaseer/i,
+    /kathir/i,
 ];
 
 const FALLBACK_LANGUAGES: FallbackLanguage[] = [

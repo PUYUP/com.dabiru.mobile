@@ -264,7 +264,7 @@ export const addNotesAPI = async (
     ranges: string[],
 ) => {
     try {
-        const res = await api.post(`/auth/v1/notes`, { body, ranges });
+        const res = await api.post(`/auth/v1/notes`, { body, ranges, saveToQR: false });
         return res.data;
     } catch (error: any) {
         console.log("Error add notes:", error.response?.data);

@@ -361,6 +361,10 @@ export default function TafsirReader() {
         if (!chapter || !from || !to) return;
     };
 
+    const onStartHandler = () => {
+        if (!chapter || !from || !to) return;
+    }
+
     const onFinishHandler = (seconds: number) => {
         if (!chapter || !from || !to) return;
         if (seconds <= 0) return;
@@ -422,6 +426,9 @@ export default function TafsirReader() {
 
     const onContentReadyHandler = () => {
         setIsTafsirReady(true);
+        const scrollY = sbLatestSession.data?.scroll_y;
+        if (!scrollY) return;
+
         setTimeout(() => {
             scrollViewRef.current?.scrollTo({
                 y: sbLatestSession.data.scroll_y,
@@ -555,7 +562,8 @@ export default function TafsirReader() {
                             onPause={onPauseHandler}
                             onResume={onResumeHandler}
                             onFinish={onFinishHandler}
-                            autoStart={true}
+                            onStart={onStartHandler}
+                            autoStart={false}
                             startFromSeconds={sbLatestSession.data?.status === 'ended' ? 0 : (sbLatestSession.data?.total_read_seconds ?? 0)}
                         />
                     </View>
