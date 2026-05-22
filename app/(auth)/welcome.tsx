@@ -176,7 +176,7 @@ const Index = () => {
                         onPress={() => continueHandler()}
                         mode="contained"
                         contentStyle={{ paddingVertical: 6 }}>
-                        <Text>Continue with Quran.Foundation</Text>
+                        <Text>Continue with Quran.com</Text>
                     </Button>
                 </View>
             )}
