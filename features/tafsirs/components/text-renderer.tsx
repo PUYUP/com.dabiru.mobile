@@ -67,14 +67,19 @@ const fontOverrideCSS = `
   }
 `;
 
-function preprocessHtml(html: string): string {
-    return html.replace(
-        /(<p[^>]*>)([\s\S]*?)(\([^)]+\))\s*(<\/p>)/gi,
-        (_, openTag, content, ref, closeTag) => {
-            // Tidak ada newline/spasi di antara span dan konten Arab
-            return `${openTag}<span class="surah-ref">${ref.trim()}</span>${content.trim()}${closeTag}`;
+function addRtlToArabicParagraphs(html: string): string {
+    return html.replace(/<p(\s[^>]*)?>[\s\S]*?<\/p>/g, (match) => {
+        const hasLatin = /[a-zA-Z]/.test(match.replace(/<[^>]+>/g, ''));
+        
+        if (!hasLatin) {
+            return match.replace(/^<p(\s[^>]*)?>/,  (tag, attrs) => {
+                if (attrs && /dir\s*=/.test(attrs)) return tag;
+                return `<p${attrs || ''} dir="rtl">`;
+            });
         }
-    );
+        
+        return match;
+    });
 }
 
 const TextRenderer = forwardRef<TextRendererHandle, Props>(
@@ -148,8 +153,8 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
                     elements.forEach(function(el) {
                         const text = el.innerText || el.textContent || '';
                         if (arabicRegex.test(text)) {
-                            el.style.direction = 'rtl';
-                            el.style.textAlign = 'right';
+                            // el.style.direction = 'rtl';
+                            // el.style.textAlign = 'right';
                         }
                     });
                 }
@@ -340,6 +345,15 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
 
                     p {
                         margin-bottom: 16px;
+                        unicode-bidi: plaintext;
+                    }
+
+                    p[dir="rtl"] {
+                        direction: rtl;
+                        text-align: right;
+                        unicode-bidi: embed;
+                        font-size: ${fontSize * 1.25}px;
+                        line-height: ${lineHeight * 1.5}px;
                     }
 
                     strong {
@@ -365,11 +379,9 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
                         width: 100%;
                         border-collapse: collapse;
                     }
-
-                    /* Ganti p yang lama */
-                    p {
-                        margin-bottom: 16px;
-                        unicode-bidi: plaintext;
+                    
+                    span {
+                        display: inline-block !important;
                     }
 
                     /* Khusus p yang mengandung Arab + surah-ref */
@@ -400,7 +412,7 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
             </head>
 
             <body>
-                ${preprocessHtml(htmlText)}
+                ${addRtlToArabicParagraphs(htmlText)}
             </body>
             </html>
         `;
