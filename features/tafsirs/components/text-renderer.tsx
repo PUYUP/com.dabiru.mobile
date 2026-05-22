@@ -352,13 +352,17 @@ const TextRenderer = forwardRef<TextRendererHandle, Props>(
                         direction: rtl;
                         text-align: right;
                         unicode-bidi: embed;
-                        font-size: ${fontSize * 1.25}px;
+                        font-size: ${fontSize * 1.35}px;
                         line-height: ${lineHeight * 1.5}px;
                     }
 
                     strong {
                         font-weight: 700;
                         font-style: ${italic ? 'italic' : 'normal'};
+                    }
+
+                    b {
+                        font-weight: normal !important;
                     }
 
                     em {
